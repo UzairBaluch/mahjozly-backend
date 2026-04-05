@@ -12,14 +12,14 @@ const authLimiter = rateLimit({
 const publicLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 50,
-  message: { success: false, message: 'Too many attempts, please try again later' },
+  message: { success: false, message: 'Too many requests, please try again later' },
 });
 
 // Default API budget — mounted on /api in index.ts until you split limits by route group.
 const businessLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 200,
-  message: { success: false, message: 'Too many attempts, please try again later' },
+  message: { success: false, message: 'Too many requests, please try again later' },
 });
 
 export { authLimiter, publicLimiter, businessLimiter };
