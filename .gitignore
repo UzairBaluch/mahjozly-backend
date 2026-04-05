@@ -33,3 +33,7 @@ coverage/
 # Optional tooling
 .eslintcache
 *.local
+
+# Local docs / roadmap (not pushed)
+docs/
+

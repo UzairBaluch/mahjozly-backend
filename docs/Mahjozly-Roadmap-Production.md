@@ -4,6 +4,165 @@ Build one thing at a time. Learn only what you need when you need it. Same appro
 
 ---
 
+## Progress checklist
+
+**How to use:** tick `[x]` when something is truly done; leave `[ ]` for not started. Edit this section whenever you ship a slice. *(This `docs/` folder is gitignored — the checklist stays on your machine unless you change that.)*
+
+### At a glance
+
+| Area | Status |
+|------|--------|
+| Phase 1 — TypeScript foundation | Optional / self-paced — not tracked in repo |
+| Phase 2 — Project setup | **Done** |
+| Phase 3 — DB + Prisma + Docker | **Next** — not started in repo |
+| Phases 4–19 | Not started |
+
+### Phase 1 — TypeScript foundation
+
+- [ ] Watched / worked through TS basics (crash course — no codealong required per roadmap)
+
+### Phase 2 — Project setup
+
+- [x] `tsconfig` + `npm` scripts (`dev`, `build`, `start`, `lint`, `lint:fix`, `format`)
+- [x] `src/config/env.ts` — Zod validation, crash on bad/missing env
+- [x] `src/index.ts` — helmet, cors, `express.json`, morgan, listen + clear `EADDRINUSE` / error logging
+- [x] API mounted at `/api` → v1 router → `/health` (controller → service pattern)
+- [x] ESLint (flat config) + Prettier
+- [x] `express-rate-limit` — `businessLimiter` on `/api`; `authLimiter` / `publicLimiter` exported for later route groups
+- [ ] Wire **auth** vs **public** vs **business** route groups with their limiters (as in "Rate limit strategy" below) once those routers exist
+- [ ] Full folder skeleton from Phase 2 (`repositories/`, `queues/`, `workers/`, `lib/database.ts`, …) — add as you need them
+
+### Phase 3 — PostgreSQL + Prisma + Docker
+
+- [ ] Docker Desktop + `docker-compose.yml` (Postgres + Redis)
+- [ ] `npm i prisma @prisma/client` + `npx prisma init`
+- [ ] `prisma/schema.prisma` matches **Build your schema** in this doc + `npx prisma migrate dev`
+- [ ] `prisma/seed.ts` — seed Category table with fixed platform categories
+- [ ] `npx prisma db seed`
+- [ ] `src/lib/database.ts` — Prisma singleton + generate client
+
+### Phase 4 — Logging
+
+- [ ] Winston (or Pino) + request ID middleware; replace ad-hoc `console` where it matters
+
+### Phase 5 — Error handling
+
+- [ ] Global error middleware + stable JSON shape; optional Sentry in prod
+
+### Phase 6 — Auth
+
+- [ ] Register / login, JWT (or sessions), `auth` routes + `auth.middleware`
+- [ ] Role split after register — USER vs ORG
+
+### Phase 7 — Business profile
+
+- [ ] Org profile CRUD + upload (Cloudinary) per roadmap
+
+### Phase 8 — Services and addons
+
+- [ ] Service + addon CRUD (3-layer + Zod)
+
+### Phase 9 — Availability
+
+- [ ] Availability / calendar behavior per roadmap
+
+### Phase 10 — Public booking page
+
+- [ ] Public routes + email (Nodemailer) flow
+
+### Phase 11 — Booking management
+
+- [ ] Business booking APIs + status transitions + guards
+
+### Phase 12 — Dashboard
+
+- [ ] Aggregations / stats endpoint(s)
+
+### Phase 13 — Auto expiry (Redis)
+
+- [ ] BullMQ (or similar) + Redis-backed jobs
+
+### Phase 14 — Testing
+
+- [ ] Jest + Prisma test DB strategy
+
+### Phase 15 — Swagger
+
+- [ ] OpenAPI / Swagger for API docs
+
+### Phase 16 — CI/CD
+
+- [ ] GitHub Actions — lint, build, test
+
+### Phase 17 — Deploy backend
+
+- [ ] Hosted API (e.g. Railway) + env + DB
+
+### Phase 18 — Frontend (Next.js)
+
+- [ ] App router app + auth + role-based dashboard + booking UX
+
+### Phase 19 — Deploy frontend
+
+- [ ] Vercel (or chosen host) + `NEXT_PUBLIC_API_URL`
+
+---
+
+## Product decisions (locked)
+
+These were decided before writing any code. Do not revisit them mid-build.
+
+### Platform model
+- Not a marketplace — orgs bring their own customers to the platform
+- Public listing of orgs is a side benefit, not the core acquisition channel
+- Platform takes no cut of transactions (no payments in MVP)
+
+### Registration flow
+- Single registration form — email + password
+- After register: user picks **USER** or **ORG** role
+- Role is permanent — no switching
+
+### USER dashboard pages
+- **Home / Browse** — search and browse all orgs (name, type, location)
+- **Services** — browse by category (fixed platform categories), see which orgs offer each service
+- **My bookings** — all bookings with status
+- **Tracking** — single booking detail, status timeline, cancel option
+- **Profile** — update name, phone, password
+
+### ORG dashboard pages
+- **Dashboard** — overview stats (total bookings, pending count, upcoming)
+- **Bookings** — all incoming bookings, filter by status/date, confirm or cancel
+- **Create service** — add a service (name, category, price, duration, max per slot, description)
+- **Addons** — manage addons (name, price) — shown to user during booking
+- **Calendar** — visual view of bookings by day/week
+- **Profile / Settings** — update org name, logo, description, location, phone, email
+
+### Booking rules
+- User must be registered to book — no guest checkout
+- Booking flow: pick service → pick date/time → pick addons (optional) → see total → confirm
+- Total = service price + sum of (addon price × quantity chosen)
+- `totalPrice` is stored at booking time — not calculated dynamically — so price changes don't affect old bookings
+- Every status change must insert a `BookingStatusLog` row manually in the service layer
+- Before creating a booking, check `Service.maxPerSlot` against existing bookings for that slot
+
+### Categories
+- Fixed list — managed by platform admin only
+- Orgs pick a category when creating a service
+- Users browse services by category
+- Categories are seeded via `prisma/seed.ts` — never entered manually
+- Adding a new category = add a row via seed, no schema migration needed
+
+### Deferred to post-MVP
+- Google Calendar integration
+- Reviews and star ratings
+- Working hours / availability slots
+- Payment processing
+- WhatsApp / SMS notifications
+- Revenue tracking on dashboard
+- Float → Decimal on price fields (do before real users)
+
+---
+
 ## Phase 1 — TypeScript Foundation
 **Goal:** Get comfortable with TypeScript before touching the project
 
@@ -103,6 +262,7 @@ const envSchema = z.object({
   SMTP_USER: z.string(),
   SMTP_PASS: z.string(),
   CLIENT_URL: z.string().url(),
+  SENTRY_DSN: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -137,9 +297,11 @@ Define different limits per route group in `src/middlewares/rateLimit.middleware
 ```typescript
 import rateLimit from 'express-rate-limit';
 
+// express-rate-limit uses in-memory counters per process — swap to a Redis store when running multiple instances.
+
 // Auth routes — strictest — prevent brute force attacks
 export const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000,
   max: 10,
   message: { success: false, message: 'Too many attempts, please try again later' },
 });
@@ -152,6 +314,7 @@ export const publicLimiter = rateLimit({
 });
 
 // Business dashboard routes — relaxed — authenticated users managing their account
+// Mounted globally on /api; auth and public routes stack their own stricter limiter on top.
 export const businessLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 200,
@@ -181,7 +344,6 @@ Server runs on localhost:8000 with TypeScript and nodemon watching for changes. 
 - Time: 1-2 hours total
 
 ### Setup Docker for local PostgreSQL
-- Search YouTube: "Docker PostgreSQL setup for beginners"
 - Install Docker Desktop
 - Create docker-compose.yml with PostgreSQL and Redis services
 - Run docker compose up
@@ -217,125 +379,238 @@ npx prisma init
 ```
 
 ### Build your schema
-Write this in prisma/schema.prisma:
+Write this in `prisma/schema.prisma`:
 
 ```prisma
-model User {
-  id           String    @id @default(cuid())
-  nameEn       String
-  nameAr       String?
-  email        String    @unique
-  password     String
-  logo         String?
-  slug         String    @unique
-  descriptionEn String?
-  descriptionAr String?
-  phone        String?
-  businessType String
-  bankName     String?
-  accountName  String?
-  iban         String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  services     Service[]
-  bookings     Booking[]
-  availability Availability[]
+generator client {
+  provider = "prisma-client-js"
 }
 
-model Service {
-  id            String    @id @default(cuid())
-  nameEn        String
-  nameAr        String?
-  descriptionEn String?
-  descriptionAr String?
-  basePrice     Decimal
-  userId        String
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  addons        Addon[]
-  availability  Availability[]
-  bookings      Booking[]
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
-model Addon {
-  id           String   @id @default(cuid())
-  nameEn       String
-  nameAr       String?
-  pricePerUnit Decimal             ← price for one unit (one chair, one hour, one person)
-  unit         String?             ← "chair", "hour", "person" — display only
-  serviceId    String
-  service      Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  bookingAddons BookingAddon[]
-}
+// ─── Enums ───────────────────────────────────────────────
 
-model Availability {
-  id        String   @id @default(cuid())
-  date      DateTime
-  isBooked  Boolean  @default(false)
-  isBlocked Boolean  @default(false)
-  serviceId String
-  service   Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([serviceId, date])    ← customer checking available dates for a service
-  @@index([userId, date])       ← business viewing their calendar
-}
-
-model Booking {
-  id             String        @id @default(cuid())
-  customerName   String
-  customerEmail  String
-  customerPhone  String
-  customerNotes  String?
-  date           DateTime
-  totalPrice     Decimal
-  status         BookingStatus @default(PENDING)
-  slipUrl        String?
-  expiresAt      DateTime?
-  serviceId      String
-  service        Service       @relation(fields: [serviceId], references: [id])
-  userId         String
-  user           User          @relation(fields: [userId], references: [id])
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  bookingAddons  BookingAddon[]
-
-  @@index([userId, date])       ← business fetching their bookings by date
-  @@index([userId, status])     ← filtering by status is very frequent
-  @@index([serviceId])          ← looking up bookings per service
-}
-
-model BookingAddon {
-  id        String  @id @default(cuid())
-  bookingId String
-  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  addonId   String
-  addon     Addon   @relation(fields: [addonId], references: [id])
-  quantity  Int             ← how many the customer picked
-  unitPrice Decimal         ← price per unit at time of booking — never recalculate from current addon
-  total     Decimal         ← quantity × unitPrice — stored so old bookings are never affected by price changes
+enum Role {
+  USER
+  ORG
 }
 
 enum BookingStatus {
   PENDING
   CONFIRMED
-  SLIP_UPLOADED
-  COMPLETED
-  EXPIRED
   CANCELLED
+  COMPLETED
+}
+
+// ─── User ────────────────────────────────────────────────
+
+model User {
+  id        String    @id @default(uuid())
+  name      String
+  email     String    @unique
+  phone     String?
+  password  String
+  role      Role
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+
+  org      Organization?
+  bookings Booking[]
+}
+
+// ─── Organization ────────────────────────────────────────
+
+model Organization {
+  id          String    @id @default(uuid())
+  userId      String    @unique
+  user        User      @relation(fields: [userId], references: [id])
+  name        String
+  location    String
+  phone       String?
+  email       String?
+  logo        String?
+  description String?
+  isVerified  Boolean   @default(false)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  deletedAt   DateTime?
+
+  services Service[]
+  addons   Addon[]
+  bookings Booking[]
+
+  @@index([deletedAt])
+}
+
+// ─── Category ────────────────────────────────────────────
+
+// Fixed list — managed by platform admin, seeded via prisma/seed.ts
+// Orgs pick from this when creating a service
+// Users browse services by category
+model Category {
+  id       String    @id @default(uuid())
+  name     String    @unique
+  slug     String    @unique
+  icon     String?
+  order    Int       @default(0)
+
+  services Service[]
+}
+
+// ─── Service ─────────────────────────────────────────────
+
+model Service {
+  id          String       @id @default(uuid())
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id])
+  categoryId  String
+  category    Category     @relation(fields: [categoryId], references: [id])
+  name        String
+  description String?
+  price       Float
+  duration    Int          // minutes
+  maxPerSlot  Int          @default(1)
+  isActive    Boolean      @default(true)
+  deletedAt   DateTime?
+
+  bookings Booking[]
+
+  @@index([deletedAt])
+  @@index([orgId])
+  @@index([categoryId])
+}
+
+// ─── Addon ───────────────────────────────────────────────
+
+// quantity lives on BookingAddon only — this is just the definition
+// org creates addons with a name and price; user picks quantity during booking
+model Addon {
+  id       String       @id @default(uuid())
+  orgId    String
+  org      Organization @relation(fields: [orgId], references: [id])
+  name     String
+  price    Float
+  isActive Boolean      @default(true)
+
+  bookingAddons BookingAddon[]
+
+  @@index([orgId])
+}
+
+// ─── Booking ─────────────────────────────────────────────
+
+// CRITICAL: every status change must insert a BookingStatusLog row manually in the service layer
+// CRITICAL: check Service.maxPerSlot against existing bookings for that slot before creating
+model Booking {
+  id          String        @id @default(uuid())
+  userId      String
+  user        User          @relation(fields: [userId], references: [id])
+  orgId       String
+  org         Organization  @relation(fields: [orgId], references: [id])
+  serviceId   String
+  service     Service       @relation(fields: [serviceId], references: [id])
+  scheduledAt DateTime
+  totalPrice  Float         // stored at booking time — not recalculated — price changes don't affect old bookings
+  notes       String?
+  status      BookingStatus @default(PENDING)
+  createdAt   DateTime      @default(now())
+  deletedAt   DateTime?
+
+  addons    BookingAddon[]
+  statusLog BookingStatusLog[]
+
+  @@unique([userId, serviceId, scheduledAt])
+  @@index([deletedAt])
+  @@index([scheduledAt])
+  @@index([orgId, scheduledAt])
+  @@index([userId])
+}
+
+// ─── Booking addon ───────────────────────────────────────
+
+model BookingAddon {
+  id        String  @id @default(uuid())
+  bookingId String
+  booking   Booking @relation(fields: [bookingId], references: [id])
+  addonId   String
+  addon     Addon   @relation(fields: [addonId], references: [id])
+  quantity  Int     @default(1)
+
+  @@unique([bookingId, addonId])
+}
+
+// ─── Booking status log ──────────────────────────────────
+
+model BookingStatusLog {
+  id        String        @id @default(uuid())
+  bookingId String
+  booking   Booking       @relation(fields: [bookingId], references: [id])
+  status    BookingStatus
+  changedAt DateTime      @default(now())
 }
 ```
 
-### Run migration
+### Seed categories
+Create `prisma/seed.ts`:
+
+```typescript
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+async function main() {
+  const categories = [
+    { name: 'Hair & Beauty', slug: 'hair-beauty', icon: '✂️', order: 1 },
+    { name: 'Health & Wellness', slug: 'health-wellness', icon: '🌿', order: 2 },
+    { name: 'Fitness', slug: 'fitness', icon: '💪', order: 3 },
+    { name: 'Consulting', slug: 'consulting', icon: '💼', order: 4 },
+    { name: 'Events & Venues', slug: 'events-venues', icon: '🎉', order: 5 },
+    { name: 'Education', slug: 'education', icon: '📚', order: 6 },
+    { name: 'Photography', slug: 'photography', icon: '📷', order: 7 },
+    { name: 'Other', slug: 'other', icon: '🔧', order: 99 },
+  ];
+
+  for (const category of categories) {
+    await prisma.category.upsert({
+      where: { slug: category.slug },
+      update: {},
+      create: category,
+    });
+  }
+
+  console.log('Categories seeded.');
+}
+
+main()
+  .catch(console.error)
+  .finally(() => prisma.$disconnect());
+```
+
+Add to `package.json`:
+```json
+"prisma": {
+  "seed": "ts-node prisma/seed.ts"
+}
+```
+
+### Run migration and seed
 ```
 npx prisma migrate dev --name init
 npx prisma generate
+npx prisma db seed
 ```
 
+### Known limitations to fix before real users
+- `price` fields are `Float` — change to `Decimal @db.Decimal(10,2)` before financial data exists
+- `User.phone` is nullable — make required when WhatsApp notifications are added
+- `Service.maxPerSlot` is not enforced by DB — must check in booking service before creating
+- `BookingStatusLog` is not auto-written — insert manually every time `Booking.status` changes
+
 ### Done when
-Database tables created and Prisma client working as a singleton.
+Database tables created, Prisma client working as singleton, categories seeded.
 
 ---
 
@@ -416,6 +691,10 @@ All logs go through Winston. No console.log anywhere in the codebase. Every requ
 
 ## Phase 5 — Error Handling
 **Goal:** All errors caught, formatted consistently, and tracked in production
+
+### Watch
+- Search YouTube: "Sentry Node.js setup error tracking"
+- Time: 15 minutes
 
 ### Install
 ```
@@ -515,7 +794,7 @@ import * as Sentry from '@sentry/node';
 Sentry.init({
   dsn: env.SENTRY_DSN,
   environment: env.NODE_ENV,
-  enabled: env.NODE_ENV === 'production', // only runs in production
+  enabled: env.NODE_ENV === 'production',
 });
 ```
 
@@ -526,13 +805,10 @@ SENTRY_DSN: z.string().optional(), // optional so local dev works without it
 
 Then capture unknown errors in the error handler before sending the 500 response:
 ```typescript
-// Unknown errors — capture in Sentry and hide details from client
 Sentry.captureException(err);
 logger.error('Unhandled error', { error: err.message, stack: err.stack, path: req.path, requestId: req.id });
 return res.status(500).json({ success: false, message: 'Internal server error' });
 ```
-
-Sentry will alert you immediately when something breaks in production with a full stack trace, request details, and the request ID so you can match it to your logs.
 
 ### Done when
 Every error in the app — Zod, Prisma, or custom — goes through one handler and returns the same shape. Unknown errors are captured in Sentry in production.
@@ -543,9 +819,10 @@ Every error in the app — Zod, Prisma, or custom — goes through one handler a
 **Goal:** Register and login working with TypeScript and Zod
 
 ### Watch
-- Search YouTube: "Zod validation crash course"
-- Time: 30 minutes
-- You already know JWT and bcrypt — just apply in TypeScript
+- Search YouTube: "JWT authentication Node.js TypeScript 2024"
+- Search YouTube: "bcrypt password hashing Node.js"
+- Time: 45 minutes total
+- You already know JWT and bcrypt — just watch how they wire up in TypeScript
 
 ### Install
 ```
@@ -562,11 +839,18 @@ npm install -D @types/bcryptjs @types/jsonwebtoken
 6. src/routes/auth.routes.ts — POST /api/v1/auth/register and login
 7. Wire routes into src/index.ts
 
+### Register flow
+- User submits name, email, password, role (USER or ORG)
+- Hash password with bcrypt
+- Create User row
+- If role is ORG — redirect frontend to org profile setup
+- If role is USER — redirect frontend to browse page
+
 ### How the 3 layers look
 ```typescript
 // repository — only knows about Prisma
 export const findUserByEmail = (email: string) =>
-  prisma.user.findUnique({ where: { email } });
+  prisma.user.findUnique({ where: { email, deletedAt: null } });
 
 // service — only knows about business rules
 export const loginUser = async (email: string, password: string) => {
@@ -574,7 +858,7 @@ export const loginUser = async (email: string, password: string) => {
   if (!user) throw new ApiError(401, 'Invalid credentials');
   const valid = await bcrypt.compare(password, user.password);
   if (!valid) throw new ApiError(401, 'Invalid credentials');
-  const token = jwt.sign({ id: user.id }, env.JWT_SECRET, { expiresIn: env.JWT_EXPIRES_IN });
+  const token = jwt.sign({ id: user.id, role: user.role }, env.JWT_SECRET, { expiresIn: env.JWT_EXPIRES_IN });
   return { token, user };
 };
 
@@ -591,8 +875,8 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 ```
 
 ### Done when
-- POST /api/v1/auth/register creates a user in database
-- POST /api/v1/auth/login returns JWT token
+- POST /api/v1/auth/register creates a user with correct role
+- POST /api/v1/auth/login returns JWT with role embedded
 - Protected route returns 401 without token
 - All errors pass through the global error handler
 
@@ -615,10 +899,10 @@ npm install -D @types/multer
 ### Build in this order
 1. src/utils/cloudinary.ts — cloudinary config
 2. src/middlewares/upload.middleware.ts — multer setup with file type and size validation
-3. src/repositories/business.repository.ts — findById, updateProfile
-4. src/services/business.service.ts — getProfile, updateProfile logic
-5. src/controllers/business.controller.ts — calls service
-6. src/routes/business.routes.ts — GET and PATCH /api/v1/business/profile
+3. src/repositories/org.repository.ts — findById, updateProfile
+4. src/services/org.service.ts — getProfile, updateProfile logic
+5. src/controllers/org.controller.ts — calls service
+6. src/routes/org.routes.ts — GET and PATCH /api/v1/business/profile
 
 ### upload.middleware.ts — validate file type and size
 ```typescript
@@ -640,12 +924,12 @@ export default upload;
 ```
 
 ### Done when
-Business can update their name, logo, bank details, phone, description. Invalid file types and oversized files are rejected.
+Org can update their name, logo, description, location, phone, email. Invalid file types and oversized files are rejected.
 
 ---
 
 ## Phase 8 — Services and Addons
-**Goal:** Business can add and manage their services and addons
+**Goal:** Org can add and manage their services and addons
 
 ### Build in this order — follow the 3-layer pattern every time
 1. src/validations/service.validation.ts — Zod schemas
@@ -655,13 +939,18 @@ Business can update their name, logo, bank details, phone, description. Invalid 
 5. src/routes/service.routes.ts
 6. Same pattern for addons
 
+### Addon rules
+- Org defines addon with name and price only — no quantity on the definition
+- Quantity is chosen by the user during booking and stored on BookingAddon
+- Org can mark addon as inactive to hide it without deleting
+
 ### Done when
-Business can create, read, update, delete services and addons.
+Org can create, read, update, soft-delete services and addons.
 
 ---
 
 ## Phase 9 — Availability
-**Goal:** Business can set and block available dates
+**Goal:** Org can set and block available dates
 
 ### Build in this order
 1. src/validations/availability.validation.ts
@@ -671,14 +960,18 @@ Business can create, read, update, delete services and addons.
 5. src/routes/availability.routes.ts
 
 ### Done when
-- Business can add available dates
-- Business can manually block a date
+- Org can add available dates
+- Org can manually block a date
 - Booked dates show as unavailable
 
 ---
 
 ## Phase 10 — Public Booking Page
-**Goal:** Customer can view business page and submit a booking
+**Goal:** User can browse orgs, browse services by category, and submit a booking
+
+### Watch
+- Search YouTube: "Nodemailer Node.js send email 2024"
+- Time: 20 minutes
 
 ### Install
 ```
@@ -686,28 +979,52 @@ npm install nodemailer
 npm install -D @types/nodemailer
 ```
 
+### Public routes — no auth middleware on these
+```
+GET  /api/v1/public/orgs                        ← list all orgs
+GET  /api/v1/public/orgs/:id                    ← single org + services
+GET  /api/v1/public/categories                  ← all categories
+GET  /api/v1/public/categories/:slug/services   ← services by category
+POST /api/v1/public/bookings                    ← submit booking (auth required)
+```
+
 ### Build in this order
-1. src/repositories/public.repository.ts — getBusinessBySlug, getAvailability, createBooking
+1. src/repositories/public.repository.ts — getOrgs, getOrgById, getCategories, getServicesByCategory, createBooking
 2. src/utils/sendEmail.ts — Nodemailer setup with HTML email templates
 3. src/services/public.service.ts
-   - getBusinessProfile — fetch business info and services by slug
-   - getAvailableDates — fetch open dates for a service
-   - submitBooking — create booking, trigger emails
+   - getOrgs — fetch all active verified orgs
+   - getServicesByCategory — fetch services filtered by category slug
+   - submitBooking — validate slot, check maxPerSlot, calculate total, create booking + addons, send emails
 4. src/controllers/public.controller.ts
-5. src/routes/public.routes.ts — no auth middleware on these routes
-   - GET /api/v1/public/:slug
-   - GET /api/v1/public/:slug/services/:serviceId/availability
-   - POST /api/v1/public/bookings
-6. Send confirmation email to customer on booking submit
-7. Send notification email to business on new booking
+5. src/routes/public.routes.ts
+
+### Booking total calculation
+```
+totalPrice = service.price + sum of (addon.price × quantity chosen)
+```
+Store this on `Booking.totalPrice` at creation time — never recalculate from current prices.
+
+### Emails to send
+- Confirmation email to user — booking reference, service, date, total
+- Notification email to org — new booking received
 
 ### Done when
-Customer can view business page and submit a booking. Both customer and business receive emails.
+User can browse orgs and services by category, submit a booking, and both parties receive emails.
 
 ---
 
 ## Phase 11 — Booking Management
-**Goal:** Business can manage bookings through full status flow
+**Goal:** Org can manage bookings through full status flow
+
+### Watch
+- No new watch needed — you know this pattern by now
+
+### Status flow
+```
+PENDING → CONFIRMED → COMPLETED
+PENDING → CANCELLED
+CONFIRMED → CANCELLED
+```
 
 ### Build in this order
 1. src/repositories/booking.repository.ts — all booking queries with pagination
@@ -718,49 +1035,50 @@ Customer can view business page and submit a booking. Both customer and business
    - PATCH /api/v1/bookings/:id/confirm
    - PATCH /api/v1/bookings/:id/complete
    - PATCH /api/v1/bookings/:id/cancel
-4. PATCH /api/v1/public/bookings/:id/slip — customer uploads payment slip
-5. Email customer at every status change
+4. Email user at every status change
 
-### Add status transition guards in the service layer
+### Status transition guard in service layer
 ```typescript
-// services/booking.service.ts
 const validTransitions: Record<BookingStatus, BookingStatus[]> = {
-  PENDING: ['CONFIRMED', 'CANCELLED', 'EXPIRED'],
-  CONFIRMED: ['SLIP_UPLOADED', 'CANCELLED'],
-  SLIP_UPLOADED: ['COMPLETED', 'CANCELLED'],
+  PENDING: ['CONFIRMED', 'CANCELLED'],
+  CONFIRMED: ['COMPLETED', 'CANCELLED'],
   COMPLETED: [],
-  EXPIRED: [],
   CANCELLED: [],
 };
 
-export const transitionBooking = async (id: string, newStatus: BookingStatus, userId: string) => {
+export const transitionBooking = async (id: string, newStatus: BookingStatus, orgId: string) => {
   const booking = await findBookingById(id);
   if (!booking) throw new ApiError(404, 'Booking not found');
-  if (booking.userId !== userId) throw new ApiError(403, 'Forbidden');
+  if (booking.orgId !== orgId) throw new ApiError(403, 'Forbidden');
   if (!validTransitions[booking.status].includes(newStatus)) {
     throw new ApiError(400, `Cannot transition from ${booking.status} to ${newStatus}`);
   }
-  return updateBookingStatus(id, newStatus);
+  const updated = await updateBookingStatus(id, newStatus);
+  // CRITICAL: always write the log
+  await createStatusLog(id, newStatus);
+  return updated;
 };
 ```
 
 ### Done when
-Full status flow works — PENDING → CONFIRMED → SLIP_UPLOADED → COMPLETED. Invalid transitions are rejected.
+Full status flow works. Invalid transitions are rejected. Status log is written on every change.
 
 ---
 
 ## Phase 12 — Dashboard
-**Goal:** Business sees basic stats
+**Goal:** Org sees basic stats from database
 
 ### Build
-1. src/repositories/dashboard.repository.ts — aggregation queries
+1. src/repositories/dashboard.repository.ts — Prisma aggregation queries
 2. src/services/dashboard.service.ts
-3. GET /api/v1/business/dashboard
+3. GET /api/v1/business/dashboard returns:
    - Total bookings
    - Upcoming bookings
-   - Pending actions count
-   - Revenue this month
-   - Use Prisma aggregation queries
+   - Pending count
+   - Confirmed count
+
+### Note
+No revenue tracking in MVP — prices stored but no payment system yet.
 
 ### Done when
 Dashboard returns real stats from database.
@@ -768,12 +1086,13 @@ Dashboard returns real stats from database.
 ---
 
 ## Phase 13 — Auto Expiry with Redis
-**Goal:** PENDING bookings auto expire after 24-48 hours
+**Goal:** PENDING bookings auto cancel after 24 hours
 
 ### Watch
 - Search YouTube: "Redis Node.js crash course"
-- Search YouTube: "BullMQ Node.js job scheduling"
-- Time: 1-2 hours
+- Search YouTube: "BullMQ Node.js job queue tutorial"
+- Time: 1-2 hours total
+- Watch Redis first — BullMQ builds on top of it
 
 ### Install
 ```
@@ -785,7 +1104,7 @@ npm install redis bullmq
 2. src/queues/booking.queue.ts — BullMQ queue setup
 3. src/workers/booking.worker.ts — job processor
 4. When booking is created in the service — add job with 24 hour delay
-5. Worker runs — checks if still PENDING — marks as EXPIRED — sends email
+5. Worker runs — checks if still PENDING — marks as CANCELLED — writes status log — sends email
 
 ### redis.ts — singleton
 ```typescript
@@ -799,7 +1118,7 @@ redis.connect();
 ```
 
 ### Done when
-PENDING bookings automatically expire after 24-48 hours.
+PENDING bookings automatically cancelled after 24 hours if org does not confirm.
 
 ---
 
@@ -816,12 +1135,12 @@ npm install -D jest supertest ts-jest @types/jest @types/supertest
 ```
 
 ### Write tests for
-- POST /api/v1/auth/register
+- POST /api/v1/auth/register (USER and ORG roles)
 - POST /api/v1/auth/login
 - POST /api/v1/public/bookings
 - PATCH /api/v1/bookings/:id/confirm
-- Test invalid status transitions are rejected
-- Test env validation crashes on missing vars
+- Invalid status transitions are rejected
+- Env validation crashes on missing vars
 
 ### Use a separate test database
 ```
@@ -829,7 +1148,7 @@ DATABASE_URL=postgresql://mahjozly:mahjozly@localhost:5432/mahjozly_test
 ```
 
 ### Done when
-npm test runs and passes for core routes.
+`npm test` runs and passes for core routes.
 
 ---
 
@@ -875,17 +1194,19 @@ Every push to GitHub triggers automatic test run.
 - Deploy
 
 ### Done when
-API live at mahjozly-production.up.railway.app
+API live and `/health` returns 200.
 
 ---
 
 ## Phase 18 — Frontend with Next.js
-**Goal:** Build the UI
+**Goal:** Build the full UI with role-based dashboards
 
 ### Watch
-- Search YouTube: "Next.js crash course 2024 for beginners"
-- Search YouTube: "Zustand crash course"
-- Time: 2-3 hours total
+- Search YouTube: "Next.js crash course 2024 app router"
+- Search YouTube: "Zustand state management React tutorial"
+- Search YouTube: "React Hook Form Zod validation tutorial"
+- Search YouTube: "Tailwind CSS crash course" (if not already familiar)
+- Time: 3-4 hours total — watch before starting this phase
 
 ### Install
 ```
@@ -894,18 +1215,31 @@ cd mahjozly-frontend
 npm install axios zustand react-hook-form zod @hookform/resolvers
 ```
 
-### Pages to build in order
-1. Landing page — mahjozly.com
-2. Register page — business signup
-3. Login page
-4. Dashboard — business bookings and stats
-5. Services page — manage services and addons
-6. Availability page — set available dates
-7. Public booking page — mahjozly.com/slug
-8. Booking confirmation page
+### Pages — USER
+1. Register page — name, email, password, role selection
+2. Login page
+3. Role selection screen — shown once after register
+4. Home / Browse — search and browse all orgs (name, type, location)
+5. Services — category grid → services list → org detail
+6. Booking flow — service → date/time → addons → total → confirm
+7. Booking confirmation page — summary + reference
+8. My bookings — list with status badges
+9. Booking detail / tracking — status timeline, cancel option
+10. Profile — update name, phone, password
+
+### Pages — ORG
+1. Register page — name, email, password, role selection
+2. Login page
+3. Org profile setup — required immediately after ORG register before anything else
+4. Dashboard — stats overview (total, pending, upcoming)
+5. Bookings — list with filter by status/date, confirm/cancel actions
+6. Create service — name, category, price, duration, maxPerSlot, description
+7. Addons — manage addons list (name, price, active toggle)
+8. Calendar — bookings by day/week view
+9. Profile / Settings — update org details, logo
 
 ### Done when
-Full flow works end to end — business signs up, adds services, customer books, emails sent.
+Full flow works end to end — org registers, sets up profile, adds services and addons, user registers, browses by category, books, org confirms, user sees status update.
 
 ---
 
@@ -915,11 +1249,11 @@ Full flow works end to end — business signs up, adds services, customer books,
 ### Steps
 - Push to GitHub
 - Connect repo to Vercel
-- Set NEXT_PUBLIC_API_URL environment variable
+- Set `NEXT_PUBLIC_API_URL` environment variable
 - Deploy
 
 ### Done when
-mahjozly.com (or your domain) is live and working end to end.
+App is live and full booking flow works end to end in production.
 
 ---
 
@@ -928,7 +1262,7 @@ mahjozly.com (or your domain) is live and working end to end.
 | Phase | Task | Time Estimate |
 |-------|------|--------------|
 | 1 | TypeScript crash course | 2 days |
-| 2 | Project setup + env validation | 1 day |
+| 2 | Project setup | **Done** |
 | 3 | PostgreSQL + Prisma + Docker | 3 days |
 | 4 | Logging + request IDs | 1 day |
 | 5 | Global error handling + Sentry | 1 day |
@@ -960,7 +1294,7 @@ mahjozly.com (or your domain) is live and working end to end.
 
 **Rate limit strategy** — `express-rate-limit` was already installed but with no rules defined. Added three tiers: auth routes get the strictest limit to prevent brute force attacks, public routes get a moderate limit, business routes get a relaxed limit for authenticated users managing their account.
 
-**Database indexes** — added `@@index` on `Booking` for `userId+date`, `userId+status`, and `serviceId`. Added `@@index` on `Availability` for `serviceId+date` and `userId+date`. These are the most frequent queries in the app. Without indexes Prisma does a full table scan every time which gets slow as data grows.
+**Database indexes** — added `@@index` on `Booking` for `userId`, `scheduledAt`, and `orgId+scheduledAt`. Added `@@index` on `Service` for `orgId`, `categoryId`, and `deletedAt`. These are the most frequent queries in the app. Without indexes Prisma does a full table scan every time which gets slow as data grows.
 
 **Removed express-mongo-sanitize** — that package sanitizes MongoDB operator injection. You are using PostgreSQL. Prisma handles SQL injection through parameterized queries by default so this package was irrelevant and incorrect for your stack.
 
@@ -968,23 +1302,35 @@ mahjozly.com (or your domain) is live and working end to end.
 
 **Folder structure** — Separated `config/` and `lib/`. Config now only holds `env.ts`. Singleton connections (Prisma, Redis) moved to `lib/` which is the common convention. Removed `models/` which would sit empty in a Prisma project. Added `types/` for shared TypeScript interfaces like `req.user` extensions.
 
-**Addon schema** — Changed from a flat fixed price to a quantity based model. `price` became `pricePerUnit` and `unit` was added for display. `BookingAddon` now stores `quantity`, `unitPrice`, and `total` separately so old bookings are never affected when a business changes their prices.
+**Schema — final decisions from design session**
+- `Addon` has no `quantity` field — quantity belongs only on `BookingAddon`
+- `Organization` has no `type` or `categoryId` — category lives on `Service` only, so orgs can offer services across any category
+- `Category` groups services only — not orgs
+- `BookingStatus` enum is `PENDING / CONFIRMED / CANCELLED / COMPLETED` only — no `EXPIRED` or `SLIP_UPLOADED`
+- Status transition guards match this enum exactly
+- `Booking.totalPrice` stored at creation time — not recalculated dynamically
+- `@@unique([userId, serviceId, scheduledAt])` on Booking prevents duplicate bookings
+- `@@unique([bookingId, addonId])` on BookingAddon prevents duplicate addons per booking
 
-**Logging** — Added Phase 4 with Winston. morgan only logs requests. Winston logs everything happening inside your app. You need this to debug production issues.
+**Category seeding** — categories are fixed and platform-managed. Added `prisma/seed.ts` and `npx prisma db seed` step. Without seeding, orgs cannot create services.
 
-**Error handling** — Moved up to Phase 5 and made it much more complete. Now catches Zod errors, Prisma errors, and unknown errors all in one place. Original only had a custom error class with no global handler.
+**Product decisions section** — added at the top so all decisions made during design are documented in one place and not forgotten mid-build.
 
-**Env validation** — Added env.ts that validates all environment variables at startup and crashes immediately if anything is missing. Original just used dotenv with no validation.
+**Frontend pages updated** — reflect the role-based flow decided during design: USER and ORG see completely different dashboards after the same register/login flow. Removed old slug-based public page concept.
 
-**Database** — Added Prisma singleton to prevent connection pool exhaustion. Added onDelete: Cascade on relations. Added updatedAt fields. Added Docker Compose with Redis included.
+**Watch sections** — added missing watch suggestions for JWT/bcrypt in TypeScript (Phase 6), Nodemailer (Phase 10), BullMQ specifically (Phase 13), and all frontend libraries — Zustand, React Hook Form, Tailwind (Phase 18). Sentry watch added to Phase 5.
 
-**File uploads** — Added file type and size validation to the upload middleware. Original had no validation.
+**Status transition guards** — updated to match the final `BookingStatus` enum. Removed `EXPIRED` and `SLIP_UPLOADED` which were in the original but not in the schema.
 
-**Status transitions** — Added guards in the service layer so invalid booking transitions are rejected with a clear error. Original had no protection against this.
+**Logging** — Phase 4 with Winston. morgan only logs requests. Winston logs everything happening inside your app.
 
-**Unhandled rejections** — Added process-level handlers for uncaughtException and unhandledRejection so the app crashes cleanly instead of silently failing.
+**Error handling** — Phase 5 catches Zod errors, Prisma errors, and unknown errors all in one place.
 
-**Test database** — Added note to use a separate test database so tests do not touch your real data.
+**Unhandled rejections** — process-level handlers for `uncaughtException` and `unhandledRejection` so the app crashes cleanly instead of silently failing.
+
+**Test database** — separate test database so tests do not touch real data.
+
+**BookingStatusLog rule** — added to rules section at the bottom: every status change on Booking must write a BookingStatusLog row, no exceptions.
 
 ---
 
@@ -1010,7 +1356,7 @@ mahjozly-backend/
 
 ---
 
-
+## Rules
 
 - Learn only when you are about to use it
 - Build first — perfect later
@@ -1022,6 +1368,7 @@ mahjozly-backend/
 - Controllers never touch Prisma directly — that is what repositories are for
 - Services never touch Express — that is what controllers are for
 - All errors pass through the global error handler — never send a response directly in a catch block
+- Every status change on Booking must write a BookingStatusLog row — no exceptions
 
 ---
 
