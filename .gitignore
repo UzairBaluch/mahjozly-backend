@@ -34,7 +34,7 @@ coverage/
 .eslintcache
 *.local
 
-# Local docs / roadmap (not pushed)
+# Product + roadmap markdown — local only; never commit or push (see README).
 docs/
 
 

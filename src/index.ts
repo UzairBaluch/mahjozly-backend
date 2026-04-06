@@ -11,6 +11,7 @@ import { logger } from './utils/logger.js';
 
 const app = express();
 
+// Request id first so every downstream middleware, route, and logger can use req.id / X-Request-ID.
 app.use(requestId);
 
 // Sets safer default headers (XSS, clickjacking, etc.) early — cheap baseline before routes exist.
@@ -52,12 +53,27 @@ server.on('error', (err: NodeJS.ErrnoException) => {
   process.exit(1);
 });
 
+// Anything that escapes try/catch on the main thread — log then exit so orchestration can restart a clean process.
 process.on('uncaughtException', (err) => {
-  logger.error('Uncaught exception', { error: err.message, stack: err.stack });
+  logger.error('Uncaught exception', { message: err.message, stack: err.stack });
   process.exit(1);
 });
 
+// The rejection value is `unknown` — often Error, but can be a string, number, or plain object.
 process.on('unhandledRejection', (reason) => {
-  logger.error('Unhandled rejection', { reason });
+  if (reason instanceof Error) {
+    logger.error('Unhandled rejection', {
+      message: reason.message,
+      stack: reason.stack,
+    });
+  } else {
+    const detail =
+      typeof reason === 'string'
+        ? reason
+        : typeof reason === 'object' && reason !== null
+          ? JSON.stringify(reason)
+          : String(reason);
+    logger.error('Unhandled rejection', { reason: detail });
+  }
   process.exit(1);
 });
