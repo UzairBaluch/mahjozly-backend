@@ -6,8 +6,12 @@ import cors from 'cors';
 import morgan from 'morgan';
 import { businessLimiter } from './middlewares/rateLimit.middleware.js';
 import { apiRouter } from './routes/index.js';
+import { requestId } from './middlewares/requestId.middleware.js';
+import { logger } from './utils/logger.js';
 
 const app = express();
+
+app.use(requestId);
 
 // Sets safer default headers (XSS, clickjacking, etc.) early — cheap baseline before routes exist.
 app.use(helmet());
@@ -31,19 +35,29 @@ app.use(morgan('dev'));
 app.use('/api', businessLimiter, apiRouter);
 
 const server = app.listen(Number(env.PORT), () => {
-  console.log(`Server is running on Port ${env.PORT}`);
+  logger.info(`Server is running on Port ${env.PORT}`);
 });
 
 // listen() can fail before the server accepts connections — attach 'error' so we log instead of an unhandled throw.
 server.on('error', (err: NodeJS.ErrnoException) => {
   if (err.code === 'EADDRINUSE') {
     // Same port as another process (common when an old node is still bound).
-    console.error(
+    logger.error(
       `Port ${env.PORT} is already in use — another process (often an old node) is still listening.\nStop it, then restart: lsof -i :${env.PORT}`,
     );
   } else {
     // Any other bind/listen failure — surface the real errno/message for debugging.
-    console.error('Server failed to start:', err);
+    logger.error('Server failed to start:', err);
   }
+  process.exit(1);
+});
+
+process.on('uncaughtException', (err) => {
+  logger.error('Uncaught exception', { error: err.message, stack: err.stack });
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason) => {
+  logger.error('Unhandled rejection', { reason });
   process.exit(1);
 });
