@@ -37,3 +37,5 @@ coverage/
 # Local docs / roadmap (not pushed)
 docs/
 
+
+/src/generated/prisma

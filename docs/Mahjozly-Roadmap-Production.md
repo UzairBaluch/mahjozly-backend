@@ -14,8 +14,9 @@ Build one thing at a time. Learn only what you need when you need it. Same appro
 |------|--------|
 | Phase 1 — TypeScript foundation | Optional / self-paced — not tracked in repo |
 | Phase 2 — Project setup | **Done** |
-| Phase 3 — DB + Prisma + Docker | **Next** — not started in repo |
-| Phases 4–19 | Not started |
+| Phase 3 — DB + Prisma + Docker | **Done** |
+| Phase 4 — Logging | **Next** |
+| Phases 5–19 | Not started |
 
 ### Phase 1 — TypeScript foundation
 
@@ -30,16 +31,17 @@ Build one thing at a time. Learn only what you need when you need it. Same appro
 - [x] ESLint (flat config) + Prettier
 - [x] `express-rate-limit` — `businessLimiter` on `/api`; `authLimiter` / `publicLimiter` exported for later route groups
 - [ ] Wire **auth** vs **public** vs **business** route groups with their limiters (as in "Rate limit strategy" below) once those routers exist
-- [ ] Full folder skeleton from Phase 2 (`repositories/`, `queues/`, `workers/`, `lib/database.ts`, …) — add as you need them
+- [ ] Full folder skeleton from Phase 2 (`repositories/`, `queues/`, `workers/`, …) — `src/lib/database.ts` shipped in Phase 3
 
 ### Phase 3 — PostgreSQL + Prisma + Docker
 
-- [ ] Docker Desktop + `docker-compose.yml` (Postgres + Redis)
-- [ ] `npm i prisma @prisma/client` + `npx prisma init`
-- [ ] `prisma/schema.prisma` matches **Build your schema** in this doc + `npx prisma migrate dev`
-- [ ] `prisma/seed.ts` — seed Category table with fixed platform categories
-- [ ] `npx prisma db seed`
-- [ ] `src/lib/database.ts` — Prisma singleton + generate client
+- [x] Docker Desktop + `docker-compose.yml` (Postgres + Redis)
+- [x] `npm i prisma @prisma/client` + `npx prisma init`
+- [x] `prisma/schema.prisma` matches **Build your schema** in this doc + `npx prisma migrate dev`
+- [x] `prisma/seed.ts` — seed Category table (fixed platform categories)
+- [x] `npx prisma db seed`
+- [x] Prisma client generated (`npx prisma generate` / post-install)
+- [x] `src/lib/database.ts` — Prisma singleton wired for the app
 
 ### Phase 4 — Logging
 

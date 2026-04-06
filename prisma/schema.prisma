@@ -1,0 +1,169 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  
+}
+
+// ─── Enums ───────────────────────────────────────────────
+
+enum Role {
+  USER
+  ORG
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+// ─── User ────────────────────────────────────────────────
+
+model User {
+  id        String    @id @default(uuid())
+  name      String
+  email     String    @unique
+  phone     String?
+  password  String
+  role      Role
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+
+  org      Organization?
+  bookings Booking[]
+}
+
+// ─── Organization ────────────────────────────────────────
+
+model Organization {
+  id          String    @id @default(uuid())
+  userId      String    @unique
+  user        User      @relation(fields: [userId], references: [id])
+  name        String
+  location    String
+  phone       String?
+  email       String?
+  logo        String?
+  description String?
+  isVerified  Boolean   @default(false)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  deletedAt   DateTime?
+
+  services Service[]
+  addons   Addon[]
+  bookings Booking[]
+
+  @@index([deletedAt])
+}
+
+// ─── Category ────────────────────────────────────────────
+
+// Fixed list — managed by platform admin, seeded via prisma/seed.ts
+// Orgs pick from this when creating a service
+// Users browse services by category
+model Category {
+  id       String    @id @default(uuid())
+  name     String    @unique
+  slug     String    @unique
+  icon     String?
+  order    Int       @default(0)
+
+  services Service[]
+}
+
+// ─── Service ─────────────────────────────────────────────
+
+model Service {
+  id          String       @id @default(uuid())
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id])
+  categoryId  String
+  category    Category     @relation(fields: [categoryId], references: [id])
+  name        String
+  description String?
+  price       Float
+  duration    Int          // minutes
+  maxPerSlot  Int          @default(1)
+  isActive    Boolean      @default(true)
+  deletedAt   DateTime?
+
+  bookings Booking[]
+
+  @@index([deletedAt])
+  @@index([orgId])
+  @@index([categoryId])
+}
+
+// ─── Addon ───────────────────────────────────────────────
+
+// quantity lives on BookingAddon only — this is just the definition
+// org creates addons with a name and price; user picks quantity during booking
+model Addon {
+  id       String       @id @default(uuid())
+  orgId    String
+  org      Organization @relation(fields: [orgId], references: [id])
+  name     String
+  price    Float
+  isActive Boolean      @default(true)
+
+  bookingAddons BookingAddon[]
+
+  @@index([orgId])
+}
+
+// ─── Booking ─────────────────────────────────────────────
+
+// CRITICAL: every status change must insert a BookingStatusLog row manually in the service layer
+// CRITICAL: check Service.maxPerSlot against existing bookings for that slot before creating
+model Booking {
+  id          String        @id @default(uuid())
+  userId      String
+  user        User          @relation(fields: [userId], references: [id])
+  orgId       String
+  org         Organization  @relation(fields: [orgId], references: [id])
+  serviceId   String
+  service     Service       @relation(fields: [serviceId], references: [id])
+  scheduledAt DateTime
+  totalPrice  Float         // stored at booking time — not recalculated — price changes don't affect old bookings
+  notes       String?
+  status      BookingStatus @default(PENDING)
+  createdAt   DateTime      @default(now())
+  deletedAt   DateTime?
+
+  addons    BookingAddon[]
+  statusLog BookingStatusLog[]
+
+  @@unique([userId, serviceId, scheduledAt])
+  @@index([deletedAt])
+  @@index([scheduledAt])
+  @@index([orgId, scheduledAt])
+  @@index([userId])
+}
+
+// ─── Booking addon ───────────────────────────────────────
+
+model BookingAddon {
+  id        String  @id @default(uuid())
+  bookingId String
+  booking   Booking @relation(fields: [bookingId], references: [id])
+  addonId   String
+  addon     Addon   @relation(fields: [addonId], references: [id])
+  quantity  Int     @default(1)
+
+  @@unique([bookingId, addonId])
+}
+
+// ─── Booking status log ──────────────────────────────────
+
+model BookingStatusLog {
+  id        String        @id @default(uuid())
+  bookingId String
+  booking   Booking       @relation(fields: [bookingId], references: [id])
+  status    BookingStatus
+  changedAt DateTime      @default(now())
+}
