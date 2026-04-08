@@ -1,6 +1,7 @@
 import { type ErrorRequestHandler } from 'express';
 import { ApiError } from '../utils/ApiError.js';
 import { logger } from '../utils/logger.js';
+import { ZodError } from 'zod';
 
 // Central error boundary for HTTP responses.
 // Start simple: known ApiError -> structured client response, everything else -> generic 500.
@@ -13,6 +14,21 @@ const errorMiddleware: ErrorRequestHandler = (err, req, res, _next) => {
       errors: err.errors,
     });
   }
+
+  if (err instanceof ZodError) {
+    // Zod gives structured field issues; map them into a client-friendly array.
+    // requestId is included so frontend/support can correlate this response with backend logs.
+    return res.status(400).json({
+      success: false,
+      message: 'Validation failed',
+      errors: err.issues.map((e) => ({
+        path: e.path.join('.'),
+        message: e.message,
+      })),
+      requestId: req.id,
+    });
+  }
+
   // Unknown errors: log request context + normalized error details for debugging/incident tracing.
   logger.error({
     requestId: req.id,
