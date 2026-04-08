@@ -8,6 +8,7 @@ import { businessLimiter } from './middlewares/rateLimit.middleware.js';
 import { apiRouter } from './routes/index.js';
 import { requestId } from './middlewares/requestId.middleware.js';
 import { logger } from './utils/logger.js';
+import { errorMiddleware } from './middlewares/error.middleware.js';
 
 const app = express();
 
@@ -34,6 +35,9 @@ app.use(morgan('dev'));
 // Per-IP cap on all /api/* — businessLimiter runs before the router; mount authLimiter/publicLimiter on specific routers later.
 // Versioned API under /api; add v2 in routes/index.ts with apiRouter.use('/v2', v2Router).
 app.use('/api', businessLimiter, apiRouter);
+
+// Global error boundary — keep this after routes so thrown/rejected errors map to one JSON shape.
+app.use(errorMiddleware);
 
 const server = app.listen(Number(env.PORT), () => {
   logger.info(`Server is running on Port ${env.PORT}`);
