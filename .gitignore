@@ -39,3 +39,4 @@ docs/
 
 
 /src/generated/prisma
+.cursor/
