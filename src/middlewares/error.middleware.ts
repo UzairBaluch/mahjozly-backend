@@ -22,6 +22,7 @@ const errorMiddleware: ErrorRequestHandler = (err, req, res, _next) => {
   });
   // Keep client payload generic (no stack/details leak); support can trace by requestId in logs.
   return res.status(500).json({
+    requestId: req.id,
     success: false,
     message: 'Internal server error',
   });
