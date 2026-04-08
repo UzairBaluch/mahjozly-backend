@@ -2,6 +2,7 @@ import { type ErrorRequestHandler } from 'express';
 import { ApiError } from '../utils/ApiError.js';
 import { logger } from '../utils/logger.js';
 import { ZodError } from 'zod';
+import { Prisma } from '@prisma/client';
 
 // Central error boundary for HTTP responses.
 // Start simple: known ApiError -> structured client response, everything else -> generic 500.
@@ -27,6 +28,22 @@ const errorMiddleware: ErrorRequestHandler = (err, req, res, _next) => {
       })),
       requestId: req.id,
     });
+  }
+
+  if (err instanceof Prisma.PrismaClientKnownRequestError) {
+    // Prisma known request errors expose stable codes (P20xx). Start with uniqueness conflicts.
+    if (err.code === 'P2002') {
+      logger.error({
+        requestId: req.id,
+        path: req.path,
+        code: err.code,
+      });
+      return res.status(409).json({
+        success: false,
+        message: 'A record with this value already exists',
+        requestId: req.id,
+      });
+    }
   }
 
   // Unknown errors: log request context + normalized error details for debugging/incident tracing.
