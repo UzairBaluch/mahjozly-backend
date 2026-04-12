@@ -1,3 +1,4 @@
+// Runs early in the stack so req.id and X-Request-ID are available to loggers, error middleware, and clients.
 import { type Request, type Response, type NextFunction } from 'express';
 import { randomUUID } from 'node:crypto';
 

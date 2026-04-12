@@ -1,3 +1,4 @@
+// Version 1 route table — only mounts feature routers; does not implement handlers itself.
 import { Router } from 'express';
 import { healthRouter } from './health.routes.js';
 

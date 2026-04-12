@@ -1,3 +1,4 @@
+// Winston transports switch on NODE_ENV — production rotates JSON files; dev prints colorized lines to the terminal.
 // Single app-wide logger — import { logger } from './utils/logger.js'. Prefer metadata objects (logger.info('msg', { key })) for JSON file logs in production.
 import winston from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';

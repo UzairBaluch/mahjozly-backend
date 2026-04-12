@@ -1,3 +1,4 @@
+// Throw this from services for expected failures (validation handled by Zod middleware, DB conflicts often via Prisma codes).
 // Operational errors you intend to send to the client (4xx/5xx). Throw from services or pass via next(err); map to JSON in a global error middleware.
 // Do not use for programming bugs — those stay as generic 500s after logging.
 class ApiError extends Error {

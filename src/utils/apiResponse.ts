@@ -1,3 +1,4 @@
+// Success envelope twin to ApiError failures — keep field names (success, message, data) stable for the frontend.
 // Shape of successful API JSON. Use with res.status(code).json(new ApiResponse(...)) or a small helper that calls res.json().
 // Pairs conceptually with ApiError (errors) — keep both envelopes consistent for the frontend.
 class ApiResponse {

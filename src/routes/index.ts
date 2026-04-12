@@ -1,3 +1,4 @@
+// Top-level /api router — only mounts versioned sub-routers (v1 today).
 // Request flow:
 // index.ts → /api → apiRouter → /v1 → v1Router → /health → healthRouter → controller → service
 // Central router — mounts all versioned routers so index.ts stays clean.

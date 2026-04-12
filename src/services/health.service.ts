@@ -1,3 +1,4 @@
+// Stateless health data — add DB/Redis pings here when you want deeper checks without bloating the controller.
 // Shape of the JSON we expose for health checks (easy to extend later, e.g. DB ping).
 interface HealthStatus {
   status: string;

@@ -1,3 +1,4 @@
+// Example controller pattern: asyncHandler + service call + ApiResponse envelope.
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { getHealthStatus } from '../services/health.service.js';
 import { ApiResponse } from '../utils/apiResponse.js';

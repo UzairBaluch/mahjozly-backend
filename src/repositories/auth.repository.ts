@@ -4,7 +4,10 @@ import { type RegisterInput } from '../validations/auth.validation.js';
 
 // Returns the user row if that email exists, otherwise null. Used before register (duplicate check) and on login.
 const findByEmail = async (email: string) => {
-  return prisma.user.findUnique({ where: { email } });
+  return prisma.user.findUnique({
+    // Soft-deleted rows are ignored so login/register treat them as absent (email still unique in DB for new signups edge cases).
+    where: { email, deletedAt: null },
+  });
 };
 
 // Inserts a new user. `hashedPassword` must already be hashed in the service; we map it to the `password` column.

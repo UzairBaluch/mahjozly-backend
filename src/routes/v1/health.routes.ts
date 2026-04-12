@@ -1,3 +1,4 @@
+// Liveness/readiness-style endpoint — thin router that delegates to the health controller.
 import { Router } from 'express';
 import { getHealth } from '../../controllers/health.controller.js';
 

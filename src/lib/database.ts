@@ -1,3 +1,4 @@
+// Shared PrismaClient singleton (adapter-pg) — repositories import `prisma` from here, never new PrismaClient() ad hoc.
 // Loads DATABASE_URL into process.env when this module is imported outside a dotenv-preloaded entrypoint.
 import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';

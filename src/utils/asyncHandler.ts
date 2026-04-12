@@ -1,3 +1,4 @@
+// Express 5 still needs explicit forwarding of async rejections to next(err) — this wrapper does that once per route handler.
 import { type Request, type Response, type NextFunction } from 'express';
 import { type RequestHandler } from 'express';
 

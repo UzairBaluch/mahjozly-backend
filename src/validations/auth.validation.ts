@@ -1,3 +1,4 @@
+// Auth JSON bodies: register (full profile + role) and login (credentials only). Parse in middleware or controller before calling services.
 // Zod builds rules that check request bodies; invalid data becomes ZodError for your error middleware.
 import { z } from 'zod';
 

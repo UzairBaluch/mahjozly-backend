@@ -13,11 +13,15 @@ const envSchema = z.object({
   DATABASE_URL: z.string(),
   // Short secrets are unsafe; min length rejects weak values before they reach production.
   JWT_SECRET: z.string().min(32),
-  JWT_EXPIRES_IN: z.string().default('7d'),
+  // Allowed literals only — keeps sign() options aligned with jsonwebtoken; override via .env within this set.
+  JWT_EXPIRES_IN: z.enum(['1d', '7d', '30d']).default('7d'),
+  // Caching / queues (Phase 13); required at boot today so missing REDIS_URL fails fast.
   REDIS_URL: z.string(),
+  // Media uploads — validated here so Cloudinary calls never run with half-empty config.
   CLOUDINARY_CLOUD_NAME: z.string(),
   CLOUDINARY_API_KEY: z.string(),
   CLOUDINARY_API_SECRET: z.string(),
+  // Outbound email — same idea: fail at startup, not on first send.
   SMTP_HOST: z.string(),
   SMTP_PORT: z.string(),
   SMTP_USER: z.string(),
@@ -25,6 +29,7 @@ const envSchema = z.object({
   // URL check catches mistakes like missing https:// that would break CORS or redirects later.
   CLIENT_URL: z.string().url(),
 
+  // Used when you wire express-rate-limit (or similar) to env-driven windows; defaults match sensible dev values.
   RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(900000),
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(300),
 });

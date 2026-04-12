@@ -1,3 +1,4 @@
+// HTTP entrypoint: middleware order matters (request id → security → parse body → routes → error handler).
 // Loads and validates .env via env.ts — import first so we never boot with bad config.
 import { env } from './config/env.js';
 import express from 'express';

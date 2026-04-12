@@ -1,3 +1,4 @@
+// Pre-built limiters for auth-heavy vs public vs default API traffic — mount the one that matches the route’s risk.
 // express-rate-limit uses in-memory counters per process — swap to a Redis store when running multiple instances.
 import rateLimit from 'express-rate-limit';
 

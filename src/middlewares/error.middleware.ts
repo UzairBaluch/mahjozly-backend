@@ -1,3 +1,4 @@
+// Maps thrown errors (ApiError, Zod, Prisma, unknown) to one JSON contract — register last in Express after routes.
 import { type ErrorRequestHandler } from 'express';
 import { ApiError } from '../utils/ApiError.js';
 import { logger } from '../utils/logger.js';
