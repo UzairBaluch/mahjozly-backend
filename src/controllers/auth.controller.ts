@@ -1,5 +1,5 @@
 import { asyncHandler } from '../utils/asyncHandler.js';
-import { register } from '../services/auth.service.js';
+import { register, login } from '../services/auth.service.js';
 import { ApiResponse } from '../utils/apiResponse.js';
 import { type Request, type Response } from 'express';
 
@@ -18,4 +18,13 @@ const registerUser = asyncHandler(async (req: Request, res: Response) => {
   return res.status(201).json(new ApiResponse(201, result, 'User registered successfully'));
 });
 
-export { registerUser };
+const loginUser = asyncHandler(async (req: Request, res: Response) => {
+
+  const { email, password } = req.body;
+
+  const result = await login(email, password);
+  
+  return res.status(200).json(new ApiResponse(200, result, 'Login user successfully'));
+});
+
+export { registerUser, loginUser };

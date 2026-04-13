@@ -3,7 +3,7 @@ import { findByEmail, createUser } from '../repositories/auth.repository.js';
 import { ApiError } from '../utils/ApiError.js';
 import bcrypt from 'bcryptjs';
 import { type RegisterInput } from '../validations/auth.validation.js';
-import * as jwt from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 import { env } from '../config/env.js';
 
 // Create account after body has been validated (Zod). Caller should not send password back to the client.
@@ -29,6 +29,7 @@ const register = async (input: RegisterInput) => {
 
 // Issue JWT after validated credentials. Same error text for unknown email vs wrong password to avoid account enumeration.
 const login = async (email: string, password: string) => {
+  // Query by email first; both "not found" and "wrong password" map to the same 401 message.
   const user = await findByEmail(email);
 
   if (!user) {
@@ -44,8 +45,9 @@ const login = async (email: string, password: string) => {
   const token = jwt.sign({ id: user.id, role: user.role }, env.JWT_SECRET, {
     expiresIn: env.JWT_EXPIRES_IN,
   });
+  // Keep response safe: expose user profile + token, never password/hash.
   const { password: _, ...userWithoutPassword } = user;
-  return { userWithoutPassword, token };
+  return { user: userWithoutPassword, token };
 };
 
 export { register, login };
