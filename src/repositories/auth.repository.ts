@@ -5,7 +5,8 @@ import { type RegisterInput } from '../validations/auth.validation.js';
 // Returns the user row if that email exists, otherwise null. Used before register (duplicate check) and on login.
 const findByEmail = async (email: string) => {
   return prisma.user.findUnique({
-    // Soft-deleted rows are ignored so login/register treat them as absent (email still unique in DB for new signups edge cases).
+    // Lookup by unique email so service can decide duplicate/login behavior.
+    // NOTE: If you need `deletedAt: null` filtering, use a non-unique filter query method.
     where: { email, deletedAt: null },
   });
 };
@@ -27,6 +28,7 @@ const createUser = async ({
     data: {
       name,
       email,
+      // DB column is `password`; service already sends a hashed value.
       password: hashedPassword,
       role,
     },
