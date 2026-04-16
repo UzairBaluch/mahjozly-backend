@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+// PATCH schema: every field is optional so clients can update only what changed.
 const updateBusinessProfileSchema = z.object({
   name: z.string().optional(),
   location: z.string().optional(),

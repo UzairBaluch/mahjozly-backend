@@ -13,6 +13,7 @@ const getBusinessProfile = asyncHandler(async (req: Request, res: Response) => {
   if (!userId) {
     throw new ApiError(401, 'Unauthorized request');
   }
+  // Controller only coordinates HTTP <-> service. Service decides not-found/business rules.
   const result = await getBusinessProfileService(userId);
   return res.status(200).json(new ApiResponse(200, result, '...'));
 });

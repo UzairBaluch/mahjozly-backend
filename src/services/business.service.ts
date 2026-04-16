@@ -29,6 +29,7 @@ const updateBusinessProfileService = async (
   if (!org) {
     throw new ApiError(404, 'No Org found');
   }
+  // Repository performs the actual DB write; service owns the "must exist first" rule.
   const updatedOrg = await updateOrganizationByUserId(userId, input);
 
   return updatedOrg;
