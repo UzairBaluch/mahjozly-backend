@@ -2,17 +2,15 @@
 import { prisma } from '../lib/database.js';
 import { type RegisterInput } from '../validations/auth.validation.js';
 
-// Returns the user row if that email exists, otherwise null. Used before register (duplicate check) and on login.
+// Returns the user row if that email exists and not soft-deleted, otherwise null.
 const findByEmail = async (email: string) => {
-  return prisma.user.findUnique({
-    // Lookup by unique email so service can decide duplicate/login behavior.
-    // NOTE: If you need `deletedAt: null` filtering, use a non-unique filter query method.
+  return prisma.user.findFirst({
     where: { email, deletedAt: null },
   });
 };
 
-// Inserts a new user. `hashedPassword` must already be hashed in the service; we map it to the `password` column.
-const createUser = async ({
+// Single transaction: user row + Organization for ORG (avoids user without org if org create fails).
+const createUserWithOrgIfOrgRole = async ({
   name,
   email,
   hashedPassword,
@@ -21,18 +19,28 @@ const createUser = async ({
   name: string;
   email: string;
   hashedPassword: string;
-  // Same allowed values as Zod register schema / Prisma Role enum.
   role: RegisterInput['role'];
 }) => {
-  return prisma.user.create({
-    data: {
-      name,
-      email,
-      // DB column is `password`; service already sends a hashed value.
-      password: hashedPassword,
-      role,
-    },
+  return prisma.$transaction(async (tx) => {
+    const user = await tx.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        role,
+      },
+    });
+    if (role === 'ORG') {
+      await tx.organization.create({
+        data: {
+          userId: user.id,
+          name,
+          location: 'Pending setup',
+        },
+      });
+    }
+    return user;
   });
 };
 
-export { findByEmail, createUser };
+export { findByEmail, createUserWithOrgIfOrgRole };

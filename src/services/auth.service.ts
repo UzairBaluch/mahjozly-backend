@@ -1,5 +1,8 @@
 // Auth business logic: hashing, duplicate rules, orchestrating repositories. No Express/req/res here.
-import { findByEmail, createUser } from '../repositories/auth.repository.js';
+import {
+  findByEmail,
+  createUserWithOrgIfOrgRole,
+} from '../repositories/auth.repository.js';
 import { ApiError } from '../utils/ApiError.js';
 import bcrypt from 'bcryptjs';
 import { type RegisterInput } from '../validations/auth.validation.js';
@@ -16,7 +19,7 @@ const register = async (input: RegisterInput) => {
   // Cost factor 10 is a common default; plain password exists only in memory here.
   const hashedPassword = await bcrypt.hash(input.password, 10);
 
-  const registeredUser = await createUser({
+  const registeredUser = await createUserWithOrgIfOrgRole({
     name: input.name,
     email: input.email,
     role: input.role,
