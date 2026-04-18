@@ -73,7 +73,7 @@ Feature code is split by area: **`profile.*`** and **`service.*`** (controllers,
 
 - **Controllers** — HTTP only: read `req.user` / `req.body`, call services, send status + **`ApiResponse`**. No Prisma.
 - **Services** — business rules and orchestration; throw **`ApiError`** for expected failures.
-- **Repositories** — Prisma / DB only (e.g. **`insertService`** for a new row, distinct from app-layer “create” naming).
+- **Repositories** — Prisma / DB only. Inserts use names like **`insert*`** (e.g. **`insertService`**) on purpose so they are not confused with Zod **`createServiceSchema`** or app/service-layer **`create*`** helpers at a glance.
 
 Errors go through the **global error middleware**; successes use **`ApiResponse`** (`src/utils/apiResponse.ts`).
 

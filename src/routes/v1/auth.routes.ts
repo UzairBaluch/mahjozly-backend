@@ -11,6 +11,8 @@ authRouter.post('/register', validate(registerSchema), registerUser);
 authRouter.post('/login', validate(loginSchema), loginUser);
 
 // Current user from JWT — same handler for `/me` and `/profile` (client-friendly alias).
+// TODO(auth): Keep both paths in sync on purpose for now. If product needs different
+// payloads or behavior per path, add separate handlers — do not extend only one route.
 const sendAuthUser = async (req: Request, res: Response) => {
   res.send(req.user);
 };
