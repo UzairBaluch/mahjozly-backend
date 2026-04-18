@@ -5,8 +5,6 @@ import {
 } from '../repositories/business.repository.js';
 import { ApiError } from '../utils/ApiError.js';
 import { type UpdateBusinessProfileInput } from '../validations/business.validation.js';
-import { type CreateServiceInput } from '../validations/service.validation.js';
-import { createService } from '../repositories/service.repository.js';
 
 // Business layer: enforce "org must exist" rule before returning/updating profile.
 const getBusinessProfileService = async (userId: string) => {
@@ -36,14 +34,4 @@ const updateBusinessProfileService = async (userId: string, input: UpdateBusines
   return updatedOrg;
 };
 
-// Org-scoped catalog create: resolve org from the authenticated user; never trust client-sent orgId.
-// Body is validated in HTTP layer before this runs; category existence (if required) stays a separate concern.
-const createBusinessService = async (userId: string, input: CreateServiceInput) => {
-  const org = await findOrganizationByUserId(userId);
-  if (!org) {
-    throw new ApiError(404, 'No Org found');
-  }
-  // Repository owns the Prisma `create`; service owns "this user has an org" (same 404 contract as profile).
-  return createService(org.id, input);
-};
-export { getBusinessProfileService, updateBusinessProfileService, createBusinessService };
+export { getBusinessProfileService, updateBusinessProfileService };

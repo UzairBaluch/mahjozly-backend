@@ -1,8 +1,8 @@
 import { prisma } from '../lib/database.js';
 import { type CreateServiceInput } from '../validations/service.validation.js';
 
-// DB insert for a new service row. orgId comes from auth/context; body is already validated upstream.
-const createService = async (orgId: string, data: CreateServiceInput) => {
+// DB insert for a new service row. Named `insertService` so callers are not confused with app-layer `create*` helpers.
+const insertService = async (orgId: string, data: CreateServiceInput) => {
   // `create({ data })` expects one flat row object—same level as orgId, not `data: { orgId, data: { ... } }`. No `where` on create.
   // With exactOptionalPropertyTypes, optional keys must be left out—not set to `undefined`.
   return prisma.service.create({
@@ -20,4 +20,4 @@ const createService = async (orgId: string, data: CreateServiceInput) => {
   });
 };
 
-export { createService };
+export { insertService };
