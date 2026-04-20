@@ -2,10 +2,10 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiResponse } from '../utils/apiResponse.js';
 import { type Request, type Response } from 'express';
 import { ApiError } from '../utils/ApiError.js';
-import { createServiceForOrgUser } from '../services/service.service.js';
+import { createServiceForOrgUser, listServicesForOrgUser } from '../services/service.service.js';
 import { type CreateServiceInput } from '../validations/service.validation.js';
 
-// HTTP only: org gate + body validation run on the route; this handler wires userId + parsed body → service → 201.
+// HTTP only: `authenticate` + `requireOrg` on parent router; body validated on route — controller only bridges req → service.
 const createServiceHandler = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user?.id;
   if (!userId) {
@@ -13,7 +13,18 @@ const createServiceHandler = asyncHandler(async (req: Request, res: Response) =>
   }
   // `req.body` is already `CreateServiceInput` after `validate(createServiceSchema)` on the router.
   const result = await createServiceForOrgUser(userId, req.body as CreateServiceInput);
-  return res.status(201).json(new ApiResponse(201, result, '...'));
+  // 201 Created — new `Service` row.
+  return res.status(201).json(new ApiResponse(201, result, 'Service created'));
 });
 
-export { createServiceHandler };
+// GET list — 200 OK (never 201; 201 is for successful POST that creates a resource).
+const listServicesHandler = asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.user?.id;
+  if (!userId) {
+    throw new ApiError(401, 'Unauthorized request');
+  }
+  const result = await listServicesForOrgUser(userId);
+  return res.status(200).json(new ApiResponse(200, result, 'Services fetched'));
+});
+
+export { createServiceHandler, listServicesHandler };
