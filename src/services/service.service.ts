@@ -1,6 +1,6 @@
 import { findCategoryById } from '../repositories/category.repository.js';
 import { findOrganizationByUserId } from '../repositories/business.repository.js';
-import { insertService } from '../repositories/service.repository.js';
+import { findServicesByOrgId, insertService } from '../repositories/service.repository.js';
 import { ApiError } from '../utils/ApiError.js';
 import { type CreateServiceInput } from '../validations/service.validation.js';
 
@@ -20,4 +20,14 @@ const createServiceForOrgUser = async (userId: string, input: CreateServiceInput
   return insertService(org.id, input);
 };
 
-export { createServiceForOrgUser };
+// Org-scoped catalog list: same org resolution as create — ORG user with no `Organization` row → 404 (not empty list).
+// Soft-deleted services are excluded in the repository (`deletedAt: null`); zero rows is valid — return `[]`.
+const listServicesForOrgUser = async (userId: string) => {
+  const org = await findOrganizationByUserId(userId);
+  if (!org) {
+    throw new ApiError(404, 'No Org found');
+  }
+  return findServicesByOrgId(org.id);
+};
+
+export { createServiceForOrgUser, listServicesForOrgUser };
