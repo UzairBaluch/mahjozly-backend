@@ -1,6 +1,10 @@
 import { findCategoryById } from '../repositories/category.repository.js';
 import { findOrganizationByUserId } from '../repositories/business.repository.js';
-import { findServicesByOrgId, insertService } from '../repositories/service.repository.js';
+import {
+  findServiceByIdAndOrgId,
+  findServicesByOrgId,
+  insertService,
+} from '../repositories/service.repository.js';
 import { ApiError } from '../utils/ApiError.js';
 import { type CreateServiceInput } from '../validations/service.validation.js';
 
@@ -30,4 +34,17 @@ const listServicesForOrgUser = async (userId: string) => {
   return findServicesByOrgId(org.id);
 };
 
-export { createServiceForOrgUser, listServicesForOrgUser };
+// One org-owned service by id — second arg to the repo must be `org.id` (organization id), not `userId`.
+const getServiceByIdForOrgUser = async (userId: string, serviceId: string) => {
+  const org = await findOrganizationByUserId(userId);
+  if (!org) {
+    throw new ApiError(404, 'No Org found');
+  }
+  const service = await findServiceByIdAndOrgId(serviceId, org.id);
+  if (!service) {
+    throw new ApiError(404, 'Service not found');
+  }
+  return service;
+};
+
+export { createServiceForOrgUser, listServicesForOrgUser, getServiceByIdForOrgUser };
