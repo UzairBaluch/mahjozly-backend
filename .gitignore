@@ -34,9 +34,15 @@ coverage/
 .eslintcache
 *.local
 
+# Local-only project tracker (single checklist at repo root).
+MAHJOZLY_BUILD_CHECKLIST.md
+
 # Product + roadmap markdown — local only; never commit or push (see README).
 docs/
 
+# Same filenames if copied to repo root by mistake.
+Mahjozly-Roadmap-Production.md
+Mahjozly-Master-Document.md
 
 /src/generated/prisma
 .cursor/

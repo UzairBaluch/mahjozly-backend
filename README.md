@@ -1,6 +1,6 @@
 # Mahjozly
 
-Backend API for **Mahjozly** — a B2B SaaS booking product for service businesses. Product notes and the production roadmap live under **`docs/`** locally; that folder is **gitignored** and is **not** on GitHub.
+Backend API for **Mahjozly** — a B2B SaaS booking product for service businesses. **Progress tracking** uses **`MAHJOZLY_BUILD_CHECKLIST.md`** at the repo root (gitignored). Detailed roadmap and product notes can stay under **`docs/`** locally; that folder is also **gitignored** and is **not** on GitHub.
 
 **GitHub:** [github.com/UzairBaluch/mahjozly-backend](https://github.com/UzairBaluch/mahjozly-backend)
 
