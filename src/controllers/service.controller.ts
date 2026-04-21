@@ -6,8 +6,12 @@ import {
   createServiceForOrgUser,
   listServicesForOrgUser,
   getServiceByIdForOrgUser,
+  updateServiceByIdForOrgUser,
 } from '../services/service.service.js';
-import { type CreateServiceInput } from '../validations/service.validation.js';
+import {
+  type CreateServiceInput,
+  type UpdateServiceInput,
+} from '../validations/service.validation.js';
 
 // HTTP only: `authenticate` + `requireOrg` on parent router; body validated on route — controller only bridges req → service.
 const createServiceHandler = asyncHandler(async (req: Request, res: Response) => {
@@ -46,4 +50,28 @@ const getServiceByIdHandler = asyncHandler(async (req: Request, res: Response) =
   return res.status(200).json(new ApiResponse(200, result, 'Service fetched'));
 });
 
-export { createServiceHandler, listServicesHandler, getServiceByIdHandler };
+// PATCH one service by id for the authenticated org user; auth/params are validated before service update.
+const updateServiceByIdHandler = asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.user?.id;
+  if (!userId) {
+    throw new ApiError(401, 'Unauthorized request');
+  }
+  const { serviceId } = req.params;
+  if (!serviceId || Array.isArray(serviceId)) {
+    throw new ApiError(400, 'Invalid service id');
+  }
+  const result = await updateServiceByIdForOrgUser(
+    userId,
+    serviceId,
+    req.body as UpdateServiceInput,
+  );
+
+  return res.status(200).json(new ApiResponse(200, result, 'Service updated'));
+});
+
+export {
+  createServiceHandler,
+  listServicesHandler,
+  getServiceByIdHandler,
+  updateServiceByIdHandler,
+};
