@@ -15,6 +15,8 @@ const createServiceSchema = z.object({
   isActive: z.boolean().optional(),
 });
 
+export type CreateServiceInput = z.infer<typeof createServiceSchema>;
+
 // URL params for `GET /business/services/:serviceId` (and reuse for PATCH/DELETE by id later).
 const serviceIdParamsSchema = z.object({
   serviceId: z.string().uuid(),
@@ -22,5 +24,21 @@ const serviceIdParamsSchema = z.object({
 
 export type ServiceIdParamsInput = z.infer<typeof serviceIdParamsSchema>;
 
-export type CreateServiceInput = z.infer<typeof createServiceSchema>;
-export { createServiceSchema, serviceIdParamsSchema };
+// PATCH body for `/business/services/:serviceId`: all fields optional, but at least one must be present.
+const updateServiceSchema = z
+  .object({
+    name: z.string().min(1).optional(),
+    categoryId: z.string().uuid().optional(),
+    price: z.number().positive().optional(),
+    duration: z.int().positive().optional(),
+    description: z.string().optional(),
+    maxPerSlot: z.int().positive().optional(),
+    isActive: z.boolean().optional(),
+  })
+  .refine((data) => Object.values(data).some((value) => value !== undefined), {
+    message: 'at least one field must be provided',
+  });
+
+export type UpdateServiceInput = z.infer<typeof updateServiceSchema>;
+
+export { createServiceSchema, serviceIdParamsSchema, updateServiceSchema };
