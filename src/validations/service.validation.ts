@@ -15,5 +15,12 @@ const createServiceSchema = z.object({
   isActive: z.boolean().optional(),
 });
 
+// URL params for `GET /business/services/:serviceId` (and reuse for PATCH/DELETE by id later).
+const serviceIdParamsSchema = z.object({
+  serviceId: z.string().uuid(),
+});
+
+export type ServiceIdParamsInput = z.infer<typeof serviceIdParamsSchema>;
+
 export type CreateServiceInput = z.infer<typeof createServiceSchema>;
-export { createServiceSchema };
+export { createServiceSchema, serviceIdParamsSchema };
