@@ -3,10 +3,14 @@ import { findOrganizationByUserId } from '../repositories/business.repository.js
 import {
   findServiceByIdAndOrgId,
   findServicesByOrgId,
+  updateServiceByIdAndOrgId,
   insertService,
 } from '../repositories/service.repository.js';
 import { ApiError } from '../utils/ApiError.js';
-import { type CreateServiceInput } from '../validations/service.validation.js';
+import {
+  type CreateServiceInput,
+  type UpdateServiceInput,
+} from '../validations/service.validation.js';
 
 // Org-scoped catalog create: resolve org from the authenticated user; never trust client-sent orgId.
 // Request body shape is validated on the route; this layer enforces org + category before any insert.
@@ -47,4 +51,42 @@ const getServiceByIdForOrgUser = async (userId: string, serviceId: string) => {
   return service;
 };
 
-export { createServiceForOrgUser, listServicesForOrgUser, getServiceByIdForOrgUser };
+// Update one org-owned service by id; validates optional category and maps no-match updates to 404.
+const updateServiceByIdForOrgUser = async (
+  userId: string,
+  serviceId: string,
+  input: UpdateServiceInput,
+) => {
+  const org = await findOrganizationByUserId(userId);
+  if (!org) {
+    throw new ApiError(404, 'No Org found');
+  }
+
+  if (input.categoryId) {
+    const category = await findCategoryById(input.categoryId);
+    if (category === null) {
+      throw new ApiError(404, 'No category found');
+    }
+  }
+  const data = {
+    ...(input.name !== undefined ? { name: input.name } : {}),
+    ...(input.categoryId !== undefined ? { categoryId: input.categoryId } : {}),
+    ...(input.price !== undefined ? { price: input.price } : {}),
+    ...(input.description !== undefined ? { description: input.description } : {}),
+    ...(input.duration !== undefined ? { duration: input.duration } : {}),
+    ...(input.maxPerSlot !== undefined ? { maxPerSlot: input.maxPerSlot } : {}),
+    ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
+  };
+  const updated = await updateServiceByIdAndOrgId(serviceId, org.id, data);
+  if (updated.count === 0) {
+    throw new ApiError(404, 'Service not found');
+  }
+  return updated;
+};
+
+export {
+  createServiceForOrgUser,
+  listServicesForOrgUser,
+  getServiceByIdForOrgUser,
+  updateServiceByIdForOrgUser,
+};
