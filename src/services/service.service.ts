@@ -4,6 +4,7 @@ import {
   findServiceByIdAndOrgId,
   findServicesByOrgId,
   updateServiceByIdAndOrgId,
+  softDeleteServiceByIdAndOrgId,
   insertService,
 } from '../repositories/service.repository.js';
 import { ApiError } from '../utils/ApiError.js';
@@ -84,9 +85,23 @@ const updateServiceByIdForOrgUser = async (
   return updated;
 };
 
+// Soft-delete one org-owned service by id; maps no-match delete result to a 404 domain error.
+const softDeleteServiceByIdForOrgUser = async (userId: string, serviceId: string) => {
+  const org = await findOrganizationByUserId(userId);
+  if (!org) {
+    throw new ApiError(404, 'No Org found');
+  }
+  const deleted = await softDeleteServiceByIdAndOrgId(serviceId, org.id);
+  if (deleted.count === 0) {
+    throw new ApiError(404, 'Service not found');
+  }
+  return deleted;
+};
+
 export {
   createServiceForOrgUser,
   listServicesForOrgUser,
   getServiceByIdForOrgUser,
   updateServiceByIdForOrgUser,
+  softDeleteServiceByIdForOrgUser,
 };
