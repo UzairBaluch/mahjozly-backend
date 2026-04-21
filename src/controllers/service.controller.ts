@@ -7,6 +7,7 @@ import {
   listServicesForOrgUser,
   getServiceByIdForOrgUser,
   updateServiceByIdForOrgUser,
+  softDeleteServiceByIdForOrgUser,
 } from '../services/service.service.js';
 import {
   type CreateServiceInput,
@@ -69,9 +70,25 @@ const updateServiceByIdHandler = asyncHandler(async (req: Request, res: Response
   return res.status(200).json(new ApiResponse(200, result, 'Service updated'));
 });
 
+// DELETE one service by id for the authenticated org user; soft-delete is performed in the service layer.
+const softDeleteServiceByIdHandler = asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.user?.id;
+  if (!userId) {
+    throw new ApiError(401, 'Unauthorized request');
+  }
+
+  const { serviceId } = req.params;
+  if (!serviceId || Array.isArray(serviceId)) {
+    throw new ApiError(400, 'Invalid service id');
+  }
+  const result = await softDeleteServiceByIdForOrgUser(userId, serviceId);
+  return res.status(200).json(new ApiResponse(200, result, 'Service deleted'));
+});
+
 export {
   createServiceHandler,
   listServicesHandler,
   getServiceByIdHandler,
   updateServiceByIdHandler,
+  softDeleteServiceByIdHandler,
 };
