@@ -6,7 +6,10 @@ import {
   listServicesHandler,
   getServiceByIdHandler,
 } from '../../controllers/service.controller.js';
-import { createServiceSchema } from '../../validations/service.validation.js';
+import {
+  createServiceSchema,
+  serviceIdParamsSchema,
+} from '../../validations/service.validation.js';
 
 const serviceRouter = Router();
 
@@ -14,8 +17,8 @@ const serviceRouter = Router();
 // Keep this `GET '/'` before any future `GET '/:serviceId'` so the collection path is not parsed as an id.
 serviceRouter.get('/', listServicesHandler);
 
-// Read one service by id for the authenticated org.
-serviceRouter.get('/:serviceId', getServiceByIdHandler);
+// Read one service by id for the authenticated org; params are validated as UUID before controller logic.
+serviceRouter.get('/:serviceId', validate(serviceIdParamsSchema), getServiceByIdHandler);
 
 // Create a service under that org; body validated with Zod before the handler runs.
 serviceRouter.post('/', validate(createServiceSchema), createServiceHandler);
