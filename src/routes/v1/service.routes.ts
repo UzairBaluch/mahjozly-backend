@@ -6,6 +6,7 @@ import {
   listServicesHandler,
   getServiceByIdHandler,
   updateServiceByIdHandler,
+  softDeleteServiceByIdHandler,
 } from '../../controllers/service.controller.js';
 import {
   createServiceSchema,
@@ -29,6 +30,9 @@ serviceRouter.patch(
   validate(updateServiceSchema),
   updateServiceByIdHandler,
 );
+
+// Soft-delete one service by id for the authenticated org (params validated before controller logic).
+serviceRouter.delete('/:serviceId', validate(serviceIdParamsSchema), softDeleteServiceByIdHandler);
 
 // Create a service under that org; body validated with Zod before the handler runs.
 serviceRouter.post('/', validate(createServiceSchema), createServiceHandler);
