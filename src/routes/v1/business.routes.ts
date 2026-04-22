@@ -3,11 +3,14 @@ import { Router } from 'express';
 import { requireOrg } from '../../middlewares/requireOrg.middleware.js';
 import { profileRouter } from './profile.routes.js';
 import { serviceRouter } from './service.routes.js';
+import { addonRouter } from './addon.routes.js';
 
 const businessRouter = Router();
 
 // Org-only area: JWT → ORG role, then feature routers (each feature owns its own paths + validation).
 businessRouter.use('/profile', authenticate, requireOrg, profileRouter);
 businessRouter.use('/services', authenticate, requireOrg, serviceRouter);
+// Addon management for orgs only (same auth + role gate as other business features).
+businessRouter.use('/addons', authenticate, requireOrg, addonRouter);
 
 export { businessRouter };
