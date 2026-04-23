@@ -66,8 +66,23 @@ All routes below use **`authenticate`** then **`requireOrg`** — only users wit
 | `GET`  | `/profile`   | Organization profile for the authenticated org |
 | `PATCH`| `/profile`   | Partial profile update (validated body)        |
 | `POST` | `/services`  | Create a **Service** row for that org (validated body, **201**) |
+| `GET`  | `/services`  | List org services |
+| `GET`  | `/services/:serviceId` | Get one org service by id |
+| `PATCH`| `/services/:serviceId` | Update one org service by id |
+| `DELETE`| `/services/:serviceId` | Soft-delete one org service |
+| `POST` | `/addons`  | Create an addon for that org |
+| `GET`  | `/addons`  | List org addons |
+| `GET`  | `/addons/:addonId` | Get one org addon by id |
+| `PATCH`| `/addons/:addonId` | Update one org addon by id |
+| `DELETE`| `/addons/:addonId` | Deactivate one org addon |
 
 Feature code is split by area: **`profile.*`** and **`service.*`** (controllers, services, routes); **`business.routes.ts`** only mounts those routers and the shared auth gates.
+
+### Availability (`/api/v1/availability`)
+
+| Method | Path | Auth | Description |
+| ------ | ---- | ---- | ----------- |
+| `GET`  | `/` | — | Service availability by query: `serviceId`, `from`, `to`, optional `limit` |
 
 ## Architecture
 
@@ -82,17 +97,19 @@ Errors go through the **global error middleware**; successes use **`ApiResponse`
 ```
 src/
 ├── config/           # env validation (Zod)
-├── controllers/    # HTTP — auth, health, profile, service
-├── services/       # Business logic — auth, health, profile, service
-├── repositories/   # Prisma — auth, business (org), service (inserts)
-├── validations/    # Zod schemas (auth, business profile, service create)
+├── controllers/    # HTTP — auth, health, profile, service, addon, availability
+├── services/       # Business logic — auth, health, profile, service, addon, availability
+├── repositories/   # Prisma — auth, business (org), service, addon, availability
+├── validations/    # Zod schemas (auth, business, service, addon, availability)
 ├── routes/
 │   ├── index.ts      # /api → v1
 │   └── v1/
 │       ├── index.ts          # mounts health, auth, business
 │       ├── health.routes.ts
 │       ├── auth.routes.ts
-│       ├── business.routes.ts  # authenticate + requireOrg → profile + service routers
+│       ├── business.routes.ts  # authenticate + requireOrg → profile + service + addon routers
+│       ├── availability.routes.ts
+│       ├── addon.routes.ts
 │       ├── profile.routes.ts
 │       └── service.routes.ts
 ├── middlewares/      # auth, requireOrg, validate, errors, rate limits, request id
