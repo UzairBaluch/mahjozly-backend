@@ -84,6 +84,12 @@ Feature code is split by area: **`profile.*`** and **`service.*`** (controllers,
 | ------ | ---- | ---- | ----------- |
 | `GET`  | `/` | — | Service availability by query: `serviceId`, `from`, `to`, optional `limit` |
 
+### Bookings (`/api/v1/bookings`)
+
+| Method | Path | Auth | Description |
+| ------ | ---- | ---- | ----------- |
+| `POST` | `/` | JWT (`USER`) | Create one booking (service + datetime + optional addons), enforces slot capacity and stores `totalPrice` snapshot |
+
 ## Architecture
 
 - **Controllers** — HTTP only: read `req.user` / `req.body`, call services, send status + **`ApiResponse`**. No Prisma.
@@ -97,18 +103,19 @@ Errors go through the **global error middleware**; successes use **`ApiResponse`
 ```
 src/
 ├── config/           # env validation (Zod)
-├── controllers/    # HTTP — auth, health, profile, service, addon, availability
-├── services/       # Business logic — auth, health, profile, service, addon, availability
-├── repositories/   # Prisma — auth, business (org), service, addon, availability
-├── validations/    # Zod schemas (auth, business, service, addon, availability)
+├── controllers/    # HTTP — auth, health, profile, service, addon, availability, booking
+├── services/       # Business logic — auth, health, profile, service, addon, availability, booking
+├── repositories/   # Prisma — auth, business (org), service, addon, availability, booking
+├── validations/    # Zod schemas (auth, business, service, addon, availability, booking)
 ├── routes/
 │   ├── index.ts      # /api → v1
 │   └── v1/
-│       ├── index.ts          # mounts health, auth, business
+│       ├── index.ts          # mounts health, auth, business, availability, bookings
 │       ├── health.routes.ts
 │       ├── auth.routes.ts
 │       ├── business.routes.ts  # authenticate + requireOrg → profile + service + addon routers
 │       ├── availability.routes.ts
+│       ├── booking.routes.ts
 │       ├── addon.routes.ts
 │       ├── profile.routes.ts
 │       └── service.routes.ts
