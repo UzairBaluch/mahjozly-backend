@@ -62,7 +62,7 @@ const createBookingWithAddons = async (data: {
   // Include addon rows to avoid a follow-up query in the service/controller path.
   return prisma.booking.create({
     data: bookingData,
-    include: { addons: true },
+    include: { addons: true, service: true, org: true, user: true },
   });
 };
 
