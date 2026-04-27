@@ -38,31 +38,35 @@ const createBookingWithAddons = async (data: {
   notes?: string;
   addons: { addonId: string; quantity: number }[];
 }) => {
-  // Build one payload so related rows are created in the same operation.
-  const bookingData: Prisma.BookingCreateInput = {
-    user: { connect: { id: data.userId } },
-    org: { connect: { id: data.orgId } },
-    service: { connect: { id: data.serviceId } },
-    scheduledAt: data.scheduledAt,
-    totalPrice: data.totalPrice,
-    ...(data.notes !== undefined ? { notes: data.notes } : {}),
-    statusLog: { create: { status: BookingStatus.PENDING } },
-    ...(data.addons.length > 0
-      ? {
-          addons: {
-            create: data.addons.map((line) => ({
-              addon: { connect: { id: line.addonId } },
-              quantity: line.quantity,
-            })),
-          },
-        }
-      : {}),
-  };
+  return prisma.$transaction(async (tx) => {
+    const bookingData: Prisma.BookingCreateInput = {
+      user: { connect: { id: data.userId } },
+      org: { connect: { id: data.orgId } },
+      service: { connect: { id: data.serviceId } },
+      scheduledAt: data.scheduledAt,
+      totalPrice: data.totalPrice,
+      ...(data.notes !== undefined ? { notes: data.notes } : {}),
+      ...(data.addons.length > 0
+        ? {
+            addons: {
+              create: data.addons.map((line) => ({
+                addon: { connect: { id: line.addonId } },
+                quantity: line.quantity,
+              })),
+            },
+          }
+        : {}),
+    };
 
-  // Include addon rows to avoid a follow-up query in the service/controller path.
-  return prisma.booking.create({
-    data: bookingData,
-    include: { addons: true, service: true, org: true, user: true },
+    const created = await tx.booking.create({ data: bookingData });
+    await tx.bookingStatusLog.create({
+      data: { bookingId: created.id, status: BookingStatus.PENDING },
+    });
+
+    return tx.booking.findFirstOrThrow({
+      where: { id: created.id },
+      include: { addons: true, service: true, org: true, user: true, statusLog: true },
+    });
   });
 };
 
