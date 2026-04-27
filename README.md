@@ -10,6 +10,7 @@ Backend API for **Mahjozly** — a B2B SaaS booking product for service business
 - **PostgreSQL** + **Prisma** (schema in `prisma/schema.prisma`)
 - **Zod** for environment and request-body validation
 - **JWT** auth, **bcrypt** for passwords
+- **Nodemailer** for SMTP email (transactional notifications)
 - **ESM** (`"type": "module"`), output in `dist/`
 
 ## Prerequisites
@@ -65,6 +66,7 @@ All routes below use **`authenticate`** then **`requireOrg`** — only users wit
 | ------ | ------------ | ------------------------------------------------ |
 | `GET`  | `/profile`   | Organization profile for the authenticated org |
 | `PATCH`| `/profile`   | Partial profile update (validated body)        |
+| `POST` | `/profile/logo` | Upload org logo image as **base64** (validated body) → Cloudinary → persists `logo` URL |
 | `POST` | `/services`  | Create a **Service** row for that org (validated body, **201**) |
 | `GET`  | `/services`  | List org services |
 | `GET`  | `/services/:serviceId` | Get one org service by id |
@@ -75,8 +77,12 @@ All routes below use **`authenticate`** then **`requireOrg`** — only users wit
 | `GET`  | `/addons/:addonId` | Get one org addon by id |
 | `PATCH`| `/addons/:addonId` | Update one org addon by id |
 | `DELETE`| `/addons/:addonId` | Deactivate one org addon |
+| `GET`  | `/bookings` | List org bookings (query validated) |
+| `GET`  | `/bookings/:bookingId` | Get one org booking by id |
+| `PATCH`| `/bookings/:bookingId` | Update booking status (ORG) + append `BookingStatusLog` |
+| `GET`  | `/dashboard/overview` | ORG dashboard overview (counts + upcoming window) |
 
-Feature code is split by area: **`profile.*`** and **`service.*`** (controllers, services, routes); **`business.routes.ts`** only mounts those routers and the shared auth gates.
+Feature code is split by area: **`profile.*`**, **`service.*`**, **`booking`** (org + user surfaces), **`dashboard.*`**; **`business.routes.ts`** mounts those routers behind the shared auth gates.
 
 ### Availability (`/api/v1/availability`)
 
@@ -90,6 +96,7 @@ Feature code is split by area: **`profile.*`** and **`service.*`** (controllers,
 | ------ | ---- | ---- | ----------- |
 | `POST` | `/` | JWT (**USER** or **ORG**) | Create one booking (service + datetime + optional addons), enforces slot capacity and stores `totalPrice` snapshot |
 | `GET` | `/` | JWT (**USER** or **ORG**) | List bookings for the authenticated account (`req.user.id`), with optional filters + keyset `cursor` |
+| `GET` | `/:bookingId` | JWT (**USER** or **ORG**) | Get one booking owned by the authenticated `userId` |
 
 ## Architecture
 
@@ -104,10 +111,10 @@ Errors go through the **global error middleware**; successes use **`ApiResponse`
 ```
 src/
 ├── config/           # env validation (Zod)
-├── controllers/    # HTTP — auth, health, profile, service, addon, availability, booking
-├── services/       # Business logic — auth, health, profile, service, addon, availability, booking
-├── repositories/   # Prisma — auth, business (org), service, addon, availability, booking
-├── validations/    # Zod schemas (auth, business, service, addon, availability, booking)
+├── controllers/    # HTTP — auth, health, profile, service, addon, availability, booking, business-booking, dashboard
+├── services/       # Business logic — auth, health, profile, service, addon, availability, booking, email, dashboard
+├── repositories/   # Prisma — auth, business (org), service, addon, availability, booking, dashboard
+├── validations/    # Zod schemas (auth, business, service, addon, availability, booking, dashboard)
 ├── routes/
 │   ├── index.ts      # /api → v1
 │   └── v1/
@@ -117,11 +124,13 @@ src/
 │       ├── business.routes.ts  # authenticate + requireOrg → profile + service + addon routers
 │       ├── availability.routes.ts
 │       ├── booking.routes.ts
+│       ├── business-booking.routes.ts
+│       ├── dashboard.routes.ts
 │       ├── addon.routes.ts
 │       ├── profile.routes.ts
 │       └── service.routes.ts
 ├── middlewares/      # auth, requireOrg, validate, errors, rate limits, request id
-├── lib/              # prisma client, redis client
+├── lib/              # prisma client, redis client, mailer, cloudinary upload helper
 ├── types/            # Express augmentation (e.g. req.user)
 ├── utils/            # ApiError, ApiResponse, asyncHandler, logger
 └── index.ts          # Express bootstrap
