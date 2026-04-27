@@ -88,11 +88,12 @@ Feature code is split by area: **`profile.*`** and **`service.*`** (controllers,
 
 | Method | Path | Auth | Description |
 | ------ | ---- | ---- | ----------- |
-| `POST` | `/` | JWT (`USER`) | Create one booking (service + datetime + optional addons), enforces slot capacity and stores `totalPrice` snapshot |
+| `POST` | `/` | JWT (**USER** or **ORG**) | Create one booking (service + datetime + optional addons), enforces slot capacity and stores `totalPrice` snapshot |
+| `GET` | `/` | JWT (**USER** or **ORG**) | List bookings for the authenticated account (`req.user.id`), with optional filters + keyset `cursor` |
 
 ## Architecture
 
-- **Controllers** — HTTP only: read `req.user` / `req.body`, call services, send status + **`ApiResponse`**. No Prisma.
+- **Controllers** — HTTP only: read `req.user` / `req.body` (or `req.query` on `GET`), call services, send status + **`ApiResponse`**. No Prisma.
 - **Services** — business rules and orchestration; throw **`ApiError`** for expected failures.
 - **Repositories** — Prisma / DB only. Inserts use names like **`insert*`** (e.g. **`insertService`**) on purpose so they are not confused with Zod **`createServiceSchema`** or app/service-layer **`create*`** helpers at a glance.
 
@@ -126,6 +127,5 @@ src/
 └── index.ts          # Express bootstrap
 ```
 
-## Cursor / rules
 
-Project rules for the AI assistant live in `.cursor/rules/` (`mahjozly-project.mdc`, `mahjozly-roadmap.mdc`).
+
