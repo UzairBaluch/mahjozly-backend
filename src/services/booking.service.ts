@@ -3,9 +3,13 @@ import {
   findActiveAddonsByOrgAndIds,
   countActiveBookingsForSlot,
   createBookingWithAddons,
+  findBookingsForUser,
 } from '../repositories/booking.repository.js';
 import { ApiError } from '../utils/ApiError.js';
-import { type CreateBookingInput } from '../validations/booking.validation.js';
+import {
+  type CreateBookingInput,
+  type BookingListQueryInput,
+} from '../validations/booking.validation.js';
 
 // Create one booking for an authenticated user after service/addon/capacity checks.
 const createBookingForUser = async (userId: string, input: CreateBookingInput) => {
@@ -55,4 +59,9 @@ const createBookingForUser = async (userId: string, input: CreateBookingInput) =
   return createdBooking;
 };
 
-export { createBookingForUser };
+// List bookings for one user — filters/pagination are validated on the route; repo enforces `userId` scope.
+const listBookingsForUser = async (userId: string, query: BookingListQueryInput) => {
+  return findBookingsForUser(userId, query);
+};
+
+export { createBookingForUser, listBookingsForUser };
