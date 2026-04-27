@@ -1,6 +1,4 @@
-// POST /api/v1/bookings body — shape only.
-// Business rules (service exists/active, addons share org with service, slot capacity, totalPrice snapshot)
-// live in booking.service.ts — do not leak them into this file.
+// Booking request shapes — business rules stay in booking.service.ts.
 import { z } from 'zod';
 
 // One addon line on a booking. Addon.price is fixed on the Addon model; quantity is per-booking.
@@ -27,13 +25,35 @@ const createBookingSchema = z.object({
   addons: z
     .array(bookingAddonLineSchema)
     .nonempty()
-    .refine(
-      (lines) => new Set(lines.map((line) => line.addonId)).size === lines.length,
-      { message: 'addonId values must be unique within addons' },
-    )
+    .refine((lines) => new Set(lines.map((line) => line.addonId)).size === lines.length, {
+      message: 'addonId values must be unique within addons',
+    })
     .optional(),
 });
 
 export type CreateBookingInput = z.infer<typeof createBookingSchema>;
 
 export { createBookingSchema };
+
+// GET /api/v1/bookings — querystring only; repo applies `userId` scope.
+const bookingListQuerySchema = z
+  .object({
+    status: z.enum(['PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED']).optional(),
+    from: z.string().datetime().optional(),
+    to: z.string().datetime().optional(),
+    limit: z.coerce.number().int().positive().max(100).default(20),
+    // Keyset pagination: last seen booking id from previous page.
+    cursor: z.string().uuid().optional(),
+  })
+  .refine(
+    (data) => {
+      if (!data.from || !data.to) return true;
+      return new Date(data.from).getTime() < new Date(data.to).getTime();
+    },
+    {
+      message: 'from must be before to',
+      path: ['to'],
+    },
+  );
+export type BookingListQueryInput = z.infer<typeof bookingListQuerySchema>;
+export { bookingListQuerySchema };
