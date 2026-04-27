@@ -59,3 +59,19 @@ const bookingListQuerySchema = z
   );
 export type BookingListQueryInput = z.infer<typeof bookingListQuerySchema>;
 export { bookingListQuerySchema };
+
+// Path params for booking detail / org actions.
+const bookingIdParamsSchema = z.object({
+  bookingId: z.string().uuid(),
+});
+
+export type BookingIdParamsInput = z.infer<typeof bookingIdParamsSchema>;
+
+// ORG-only status transitions (validated before service rules).
+const orgUpdateBookingStatusSchema = z.object({
+  status: z.enum(['CONFIRMED', 'CANCELLED', 'COMPLETED']),
+});
+
+export type OrgUpdateBookingStatusInput = z.infer<typeof orgUpdateBookingStatusSchema>;
+
+export { bookingIdParamsSchema, orgUpdateBookingStatusSchema };
