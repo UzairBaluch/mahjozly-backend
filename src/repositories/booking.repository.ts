@@ -1,5 +1,6 @@
 import { BookingStatus, type Prisma } from '@prisma/client';
 import { prisma } from '../lib/database.js';
+import { type BookingListQueryInput } from '../validations/booking.validation.js';
 
 // Service lookup for booking create — only active, non-soft-deleted rows are valid.
 const findActiveServiceById = async (serviceId: string) => {
@@ -65,9 +66,33 @@ const createBookingWithAddons = async (data: {
   });
 };
 
+// List bookings for one user — DB-only filters; caller passes already-validated query.
+const findBookingsForUser = async (userId: string, query: BookingListQueryInput) => {
+  return prisma.booking.findMany({
+    where: {
+      userId,
+      deletedAt: null,
+      ...(query.status ? { status: query.status } : {}),
+      ...(query.cursor ? { id: { gt: query.cursor } } : {}),
+      ...(query.from || query.to
+        ? {
+            scheduledAt: {
+              ...(query.from ? { gte: new Date(query.from) } : {}),
+              ...(query.to ? { lte: new Date(query.to) } : {}),
+            },
+          }
+        : {}),
+    },
+    orderBy: { id: 'asc' },
+    take: query.limit,
+    include: { service: true, addons: true },
+  });
+};
+
 export {
   findActiveServiceById,
   findActiveAddonsByOrgAndIds,
   countActiveBookingsForSlot,
   createBookingWithAddons,
+  findBookingsForUser,
 };
