@@ -5,8 +5,9 @@ import { ApiError } from '../utils/ApiError.js';
 import {
   getBusinessProfileService,
   updateBusinessProfileService,
+  uploadOrgLogoService,
 } from '../services/profile.service.js';
-import { type UpdateBusinessProfileInput } from '../validations/business.validation.js';
+import { type UpdateBusinessProfileInput, type UploadOrgLogoInput } from '../validations/business.validation.js';
 
 // HTTP layer only: read authenticated user id, delegate to service, return API envelope.
 const getBusinessProfile = asyncHandler(async (req: Request, res: Response) => {
@@ -29,4 +30,14 @@ const updateBusinessProfile = asyncHandler(async (req: Request, res: Response) =
   return res.status(200).json(new ApiResponse(200, result, '...'));
 });
 
-export { getBusinessProfile, updateBusinessProfile };
+// Upload org logo (base64) — body validated on the route.
+const uploadOrgLogo = asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.user?.id;
+  if (!userId) {
+    throw new ApiError(401, 'Unauthorized request');
+  }
+  const result = await uploadOrgLogoService(userId, req.body as UploadOrgLogoInput);
+  return res.status(200).json(new ApiResponse(200, result, 'Logo updated'));
+});
+
+export { getBusinessProfile, updateBusinessProfile, uploadOrgLogo };
