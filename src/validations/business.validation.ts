@@ -12,4 +12,11 @@ const updateBusinessProfileSchema = z.object({
 
 export type UpdateBusinessProfileInput = z.infer<typeof updateBusinessProfileSchema>;
 
-export { updateBusinessProfileSchema };
+// POST logo upload — raw base64 bytes (no `data:` URL wrapper).
+const uploadOrgLogoSchema = z.object({
+  imageBase64: z.string().min(1).max(12_000_000),
+});
+
+export type UploadOrgLogoInput = z.infer<typeof uploadOrgLogoSchema>;
+
+export { updateBusinessProfileSchema, uploadOrgLogoSchema };
