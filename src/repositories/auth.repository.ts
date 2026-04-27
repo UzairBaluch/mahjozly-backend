@@ -9,6 +9,13 @@ const findByEmail = async (email: string) => {
   });
 };
 
+// Returns the user row by id if not soft-deleted, otherwise null.
+const findUserById = async (id: string) => {
+  return prisma.user.findFirst({
+    where: { id, deletedAt: null },
+  });
+};
+
 // Single transaction: user row + Organization for ORG (avoids user without org if org create fails).
 const createUserWithOrgIfOrgRole = async ({
   name,
@@ -43,4 +50,4 @@ const createUserWithOrgIfOrgRole = async ({
   });
 };
 
-export { findByEmail, createUserWithOrgIfOrgRole };
+export { findByEmail, findUserById, createUserWithOrgIfOrgRole };

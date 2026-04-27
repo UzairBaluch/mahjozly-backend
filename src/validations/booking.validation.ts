@@ -29,6 +29,8 @@ const createBookingSchema = z.object({
       message: 'addonId values must be unique within addons',
     })
     .optional(),
+  // ORG staff can book on behalf of a customer user (must be validated in service using JWT role).
+  customerUserId: z.string().uuid().optional(),
 });
 
 export type CreateBookingInput = z.infer<typeof createBookingSchema>;

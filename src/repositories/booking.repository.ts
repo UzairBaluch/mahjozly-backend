@@ -85,7 +85,69 @@ const findBookingsForUser = async (userId: string, query: BookingListQueryInput)
     },
     orderBy: { id: 'asc' },
     take: query.limit,
-    include: { service: true, addons: true },
+    include: { service: true, addons: true, org: true },
+  });
+};
+
+// Org-scoped list — always filter by `orgId` + soft-delete marker.
+const findBookingsForOrg = async (orgId: string, query: BookingListQueryInput) => {
+  return prisma.booking.findMany({
+    where: {
+      orgId,
+      deletedAt: null,
+      ...(query.status ? { status: query.status } : {}),
+      ...(query.cursor ? { id: { gt: query.cursor } } : {}),
+      ...(query.from || query.to
+        ? {
+            scheduledAt: {
+              ...(query.from ? { gte: new Date(query.from) } : {}),
+              ...(query.to ? { lte: new Date(query.to) } : {}),
+            },
+          }
+        : {}),
+    },
+    orderBy: { id: 'asc' },
+    take: query.limit,
+    include: { service: true, addons: true, user: true },
+  });
+};
+
+const findBookingByIdForUser = async (bookingId: string, userId: string) => {
+  return prisma.booking.findFirst({
+    where: { id: bookingId, userId, deletedAt: null },
+    include: { service: true, addons: true, org: true, statusLog: true },
+  });
+};
+
+const findBookingByIdForOrg = async (bookingId: string, orgId: string) => {
+  return prisma.booking.findFirst({
+    where: { id: bookingId, orgId, deletedAt: null },
+    include: { service: true, addons: true, user: true, statusLog: true },
+  });
+};
+
+// Status change + audit log row must land together.
+const updateBookingStatusWithLog = async (
+  bookingId: string,
+  orgId: string,
+  nextStatus: BookingStatus,
+) => {
+  return prisma.$transaction(async (tx) => {
+    const updated = await tx.booking.updateMany({
+      where: { id: bookingId, orgId, deletedAt: null },
+      data: { status: nextStatus },
+    });
+    if (updated.count === 0) {
+      return { updatedCount: 0 as const };
+    }
+    await tx.bookingStatusLog.create({
+      data: { bookingId, status: nextStatus },
+    });
+    const booking = await tx.booking.findFirst({
+      where: { id: bookingId, orgId, deletedAt: null },
+      include: { service: true, addons: true, user: true, statusLog: true },
+    });
+    return { updatedCount: 1 as const, booking };
   });
 };
 
@@ -95,4 +157,8 @@ export {
   countActiveBookingsForSlot,
   createBookingWithAddons,
   findBookingsForUser,
+  findBookingsForOrg,
+  findBookingByIdForUser,
+  findBookingByIdForOrg,
+  updateBookingStatusWithLog,
 };
