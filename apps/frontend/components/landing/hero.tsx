@@ -33,6 +33,7 @@ export function Hero() {
       <div className="relative mx-auto max-w-5xl px-6 text-center">
         <div className="inline-flex items-center gap-2 rounded-full border border-[color:var(--color-mist)] bg-[color:var(--color-paper)]/80 px-3 py-1 text-xs backdrop-blur">
           <span className="relative flex size-2" aria-hidden>
+            <span className="anim-pulse-soft absolute inline-flex size-full rounded-full bg-[color:var(--color-thread)] opacity-75" />
             <span className="relative inline-flex size-2 rounded-full bg-[color:var(--color-thread)]" />
           </span>
           <Sparkles size={12} className="text-[color:var(--color-dusk)]" />
@@ -96,7 +97,7 @@ export function Hero() {
             <p className="mono mb-4 text-[0.65rem] uppercase tracking-wider text-[color:var(--color-ink-soft)]">
               Aisha Khan · Coaching client
             </p>
-            <AnimatedThread nodes={HERO_NODES} />
+            <AnimatedThread nodes={HERO_NODES} replayMs={4000} />
             <div className="mt-8 max-w-xl text-left">
               <p className="mono mb-2 text-[0.6rem] uppercase tracking-wider text-[color:var(--color-dusk)]">
                 ★ Generated 2m ago · AI brief

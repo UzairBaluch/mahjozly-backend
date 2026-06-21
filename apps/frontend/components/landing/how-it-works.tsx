@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Brain, CalendarCheck, Check, Mail, Video } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -63,7 +63,13 @@ export function HowItWorks() {
                 isActive={activeStep === i}
                 onSelect={() => selectStep(i)}
               >
-                {i === 0 ? <StepCalendarDemo /> : i === 1 ? <StepVideoDemo /> : <StepBriefDemo />}
+                {i === 0 ? (
+                  <StepCalendarDemo isActive={activeStep === 0} />
+                ) : i === 1 ? (
+                  <StepVideoDemo isActive={activeStep === 1} />
+                ) : (
+                  <StepBriefDemo isActive={activeStep === 2} />
+                )}
               </StepCard>
             ))}
           </div>
@@ -193,12 +199,40 @@ function StepCard({
   );
 }
 
-function StepCalendarDemo() {
-  const [phase, setPhase] = useState<'idle' | 'date' | 'slot' | 'booked'>('booked');
-  const [selectedDate, setSelectedDate] = useState<number | null>(12);
-  const [selectedSlot, setSelectedSlot] = useState<string | null>('10:30');
+function StepCalendarDemo({ isActive }: { isActive: boolean }) {
+  const [phase, setPhase] = useState<'idle' | 'date' | 'slot' | 'booked'>('idle');
+  const [selectedDate, setSelectedDate] = useState<number | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [conflictDay, setConflictDay] = useState<number | null>(null);
-  const [emailSent, setEmailSent] = useState(true);
+  const [emailSent, setEmailSent] = useState(false);
+
+  useEffect(() => {
+    if (!isActive) return;
+    let cancelled = false;
+    const loop = async () => {
+      while (!cancelled && isActive) {
+        setPhase('idle');
+        setSelectedDate(null);
+        setSelectedSlot(null);
+        setEmailSent(false);
+        await wait(700);
+        setPhase('date');
+        setSelectedDate(12);
+        await wait(800);
+        setPhase('slot');
+        await wait(600);
+        setSelectedSlot('10:30');
+        await wait(500);
+        setPhase('booked');
+        setEmailSent(true);
+        await wait(2400);
+      }
+    };
+    loop();
+    return () => {
+      cancelled = true;
+    };
+  }, [isActive]);
 
   const pickDate = (day: number) => {
     if (BUSY_DAYS.has(day)) {
@@ -255,55 +289,82 @@ function StepCalendarDemo() {
         })}
       </div>
 
-      {conflictDay !== null ? (
-        <p className="mono mt-2 text-[0.6rem] uppercase tracking-wider text-red-500">
+      <div className="relative mt-3 h-[7.5rem] overflow-hidden border-t border-[color:var(--color-mist)] pt-3">
+        <p
+          className={cn(
+            'mono absolute left-0 top-0 text-[0.6rem] uppercase tracking-wider text-red-500 transition-opacity',
+            conflictDay !== null ? 'opacity-100' : 'opacity-0',
+          )}
+        >
           Busy · synced from Google Calendar
         </p>
-      ) : null}
 
-      <div className="mt-3 min-h-[7.5rem] border-t border-[color:var(--color-mist)] pt-3">
-        {phase === 'slot' || phase === 'booked' ? (
-          <>
-            <p className="mono mb-2 text-[0.6rem] uppercase tracking-wider text-[color:var(--color-ink-soft)]">
-              Available slots
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {SLOTS.map((slot) => (
-                <button
-                  key={slot}
-                  type="button"
-                  onClick={() => pickSlot(slot)}
-                  className={cn(
-                    'mono rounded-md border px-2 py-1 text-[0.65rem] transition-colors',
-                    selectedSlot === slot
-                      ? 'border-[color:var(--color-thread)] bg-[color:var(--color-thread-soft)] text-[color:var(--color-thread)]'
-                      : 'border-[color:var(--color-mist)] text-[color:var(--color-ink-soft)] hover:border-[color:var(--color-thread)]/40',
-                  )}
-                >
-                  {slot}
-                </button>
-              ))}
-            </div>
-          </>
-        ) : (
-          <p className="text-[0.65rem] text-[color:var(--color-ink-soft)]/60">Select a date to see slots</p>
-        )}
+        <p className="mono mb-2 text-[0.6rem] uppercase tracking-wider text-[color:var(--color-ink-soft)]">
+          Available slots
+        </p>
+        <div className="flex flex-wrap gap-1.5">
+          {SLOTS.map((slot) => (
+            <button
+              key={slot}
+              type="button"
+              onClick={() => pickSlot(slot)}
+              className={cn(
+                'mono rounded-md border px-2 py-1 text-[0.65rem] transition-colors',
+                selectedSlot === slot
+                  ? 'border-[color:var(--color-thread)] bg-[color:var(--color-thread-soft)] text-[color:var(--color-thread)]'
+                  : 'border-[color:var(--color-mist)] text-[color:var(--color-ink-soft)] hover:border-[color:var(--color-thread)]/40',
+                (phase === 'idle' || phase === 'date') && 'opacity-40',
+              )}
+            >
+              {slot}
+            </button>
+          ))}
+        </div>
 
-        {emailSent ? (
-          <div className="mt-3 flex items-center gap-2 rounded-md border border-[color:var(--color-thread)]/30 bg-[color:var(--color-thread-soft)]/50 px-2 py-1.5 text-[0.65rem] text-[color:var(--color-thread)]">
-            <Mail size={12} />
-            <span className="mono uppercase tracking-wider">Confirmation email sent</span>
-            <Check size={12} className="ml-auto" />
-          </div>
-        ) : null}
+        <div
+          className={cn(
+            'mt-3 flex items-center gap-2 rounded-md border border-[color:var(--color-thread)]/30 bg-[color:var(--color-thread-soft)]/50 px-2 py-1.5 text-[0.65rem] text-[color:var(--color-thread)] transition-opacity',
+            emailSent ? 'opacity-100' : 'opacity-0',
+          )}
+        >
+          <Mail size={12} />
+          <span className="mono uppercase tracking-wider">Confirmation email sent</span>
+          <Check size={12} className="ml-auto" />
+        </div>
       </div>
     </div>
   );
 }
 
-function StepVideoDemo() {
-  const [phase, setPhase] = useState<'waiting' | 'recording' | 'transcribing'>('transcribing');
-  const [seconds] = useState(23);
+function StepVideoDemo({ isActive }: { isActive: boolean }) {
+  const [phase, setPhase] = useState<'waiting' | 'recording' | 'transcribing'>('waiting');
+  const [seconds, setSeconds] = useState(0);
+
+  useEffect(() => {
+    if (!isActive) return;
+    let cancelled = false;
+    const loop = async () => {
+      while (!cancelled) {
+        setPhase('waiting');
+        setSeconds(0);
+        await wait(900);
+        if (cancelled) return;
+        setPhase('recording');
+        for (let s = 0; s <= 23; s++) {
+          if (cancelled) return;
+          setSeconds(s);
+          await wait(120);
+        }
+        if (cancelled) return;
+        setPhase('transcribing');
+        await wait(2400);
+      }
+    };
+    loop();
+    return () => {
+      cancelled = true;
+    };
+  }, [isActive]);
 
   const mm = String(Math.floor(seconds / 60)).padStart(2, '0');
   const ss = String(seconds % 60).padStart(2, '0');
@@ -378,10 +439,44 @@ const BRIEF_QUOTE =
   'Wants more practice problems. Open with last week\'s pacing recap.';
 const BRIEF_ITEMS = ['Review homework on integrals', 'Cover exam strategies for week 3'];
 
-function StepBriefDemo() {
-  const [phase] = useState<'idle' | 'typing' | 'items' | 'done'>('done');
-  const [typed] = useState(BRIEF_QUOTE);
-  const [visibleItems] = useState(BRIEF_ITEMS.length);
+function StepBriefDemo({ isActive }: { isActive: boolean }) {
+  const [phase, setPhase] = useState<'idle' | 'typing' | 'items' | 'done'>('idle');
+  const [typed, setTyped] = useState('');
+  const [visibleItems, setVisibleItems] = useState(0);
+
+  useEffect(() => {
+    if (!isActive) return;
+    let cancelled = false;
+    const loop = async () => {
+      while (!cancelled) {
+        setPhase('idle');
+        setTyped('');
+        setVisibleItems(0);
+        await wait(500);
+        if (cancelled) return;
+        setPhase('typing');
+        for (let i = 1; i <= BRIEF_QUOTE.length; i++) {
+          if (cancelled) return;
+          setTyped(BRIEF_QUOTE.slice(0, i));
+          await wait(16);
+        }
+        if (cancelled) return;
+        setPhase('items');
+        for (let i = 1; i <= BRIEF_ITEMS.length; i++) {
+          if (cancelled) return;
+          setVisibleItems(i);
+          await wait(400);
+        }
+        if (cancelled) return;
+        setPhase('done');
+        await wait(2400);
+      }
+    };
+    loop();
+    return () => {
+      cancelled = true;
+    };
+  }, [isActive]);
 
   return (
     <div className="rounded-md border border-[color:var(--color-mist)] bg-[color:var(--color-paper-warm)] p-4">
@@ -401,15 +496,35 @@ function StepBriefDemo() {
         </span>
       </div>
 
-      <p className="ai mt-2 min-h-[3.5rem] text-sm italic leading-relaxed">
-        &ldquo;{typed}&rdquo;
+      <p className="ai mt-2 h-[3.5rem] overflow-hidden text-sm italic leading-relaxed">
+        {typed ? (
+          <>
+            &ldquo;{typed}
+            {phase === 'typing' ? (
+              <span className="anim-blink ml-0.5 inline-block h-3 w-[2px] translate-y-[1px] bg-[color:var(--color-dusk)] align-middle" />
+            ) : null}
+            &rdquo;
+          </>
+        ) : (
+          <span className="opacity-40">Generating brief from last session…</span>
+        )}
       </p>
 
-      <ul className="ai mt-3 min-h-[2.5rem] space-y-1 text-xs">
-        {BRIEF_ITEMS.slice(0, visibleItems).map((item) => (
-          <li key={item}>· {item}</li>
+      <ul className="ai mt-3 h-[2.5rem] space-y-1 overflow-hidden text-xs">
+        {BRIEF_ITEMS.map((item, i) => (
+          <li
+            key={item}
+            className="transition-opacity duration-300"
+            style={{ opacity: i < visibleItems ? 1 : 0 }}
+          >
+            · {item}
+          </li>
         ))}
       </ul>
     </div>
   );
+}
+
+function wait(ms: number) {
+  return new Promise<void>((r) => window.setTimeout(r, ms));
 }

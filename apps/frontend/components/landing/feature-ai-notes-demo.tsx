@@ -1,6 +1,8 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Sparkles } from 'lucide-react';
+import { DemoStage } from './demo-stage';
 
 const SUMMARY = [
   'Discussed pacing in last session.',
@@ -14,10 +16,48 @@ const ACTION_ITEMS = [
   'Schedule mock exam for next Thursday',
 ];
 
-// Static snapshot — no typing loop (avoided layout shift).
 export function FeatureAiNotesDemo() {
+  const [phase, setPhase] = useState<'transcribing' | 'writing' | 'done'>('transcribing');
+  const [writtenLines, setWrittenLines] = useState<string[]>([]);
+  const [partial, setPartial] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const run = async () => {
+      while (!cancelled) {
+        setPhase('transcribing');
+        setWrittenLines([]);
+        setPartial('');
+        await wait(1400);
+        if (cancelled) return;
+        setPhase('writing');
+
+        for (const line of SUMMARY) {
+          if (cancelled) return;
+          for (let i = 1; i <= line.length; i++) {
+            if (cancelled) return;
+            setPartial(line.slice(0, i));
+            await wait(18);
+          }
+          setWrittenLines((prev) => [...prev, line]);
+          setPartial('');
+          await wait(280);
+        }
+        if (cancelled) return;
+        setPhase('done');
+        await wait(2600);
+      }
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
-    <div className="min-h-[280px] rounded-xl border border-[color:var(--color-mist)] bg-[color:var(--color-paper)] p-5 shadow-sm">
+    <DemoStage height={300}>
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Sparkles size={14} className="text-[color:var(--color-dusk)]" />
@@ -26,28 +66,59 @@ export function FeatureAiNotesDemo() {
           </span>
         </div>
         <span className="mono text-[0.65rem] uppercase tracking-wider text-[color:var(--color-dusk)]">
-          Saved to client thread
+          {phase === 'transcribing' && (
+            <>
+              <span className="anim-pulse-soft">●</span> Transcribing 47:12
+            </>
+          )}
+          {phase === 'writing' && (
+            <>
+              <span className="anim-pulse-soft">●</span> Writing brief
+            </>
+          )}
+          {phase === 'done' && 'Saved to client thread'}
         </span>
       </div>
 
-      <div className="min-h-[8.5rem] space-y-2">
-        {SUMMARY.map((line, i) => (
-          <p key={i} className="ai text-sm leading-relaxed italic">
-            {line}
-          </p>
-        ))}
+      <div className="h-[8.5rem] overflow-hidden">
+        <div className="space-y-2">
+          {writtenLines.map((line, i) => (
+            <p key={i} className="ai text-sm leading-relaxed italic">
+              {line}
+            </p>
+          ))}
+          {partial ? (
+            <p className="ai text-sm leading-relaxed italic">
+              {partial}
+              <span className="anim-blink ml-0.5 inline-block h-3 w-[2px] translate-y-[1px] bg-[color:var(--color-dusk)] align-middle" />
+            </p>
+          ) : null}
+          {phase === 'transcribing' ? (
+            <p className="ai text-sm italic opacity-50">Listening…</p>
+          ) : null}
+        </div>
       </div>
 
-      <div className="mt-4 border-t border-[color:var(--color-mist)] pt-4">
+      <div className="absolute inset-x-5 bottom-5 border-t border-[color:var(--color-mist)] pt-4">
         <p className="mono text-[0.65rem] uppercase tracking-wider text-[color:var(--color-ink-soft)]">
           Action items
         </p>
-        <ul className="ai mt-2 space-y-1 text-xs">
+        <ul className="ai mt-2 h-[3.5rem] space-y-1 overflow-hidden text-xs">
           {ACTION_ITEMS.map((a) => (
-            <li key={a}>· {a}</li>
+            <li
+              key={a}
+              className="transition-opacity duration-300"
+              style={{ opacity: phase === 'done' ? 1 : 0.15 }}
+            >
+              · {a}
+            </li>
           ))}
         </ul>
       </div>
-    </div>
+    </DemoStage>
   );
+}
+
+function wait(ms: number) {
+  return new Promise<void>((r) => setTimeout(r, ms));
 }

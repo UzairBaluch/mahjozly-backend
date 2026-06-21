@@ -11,12 +11,11 @@ type Props = {
   nodes: ThreadNode[];
   /** ms between each node revealing (default 600). */
   stagger?: number;
-  /** @deprecated Replay disabled — caused layout shift. Kept for API compat. */
+  /** Auto-replay loop interval in ms. 0 = no replay. */
   replayMs?: number;
 };
 
-// Hero/feature thread — builds once on load, then stays put (no replay loop).
-export function AnimatedThread({ nodes, stagger = 600 }: Props) {
+export function AnimatedThread({ nodes, stagger = 600, replayMs = 0 }: Props) {
   const [active, setActive] = useState(0);
 
   useEffect(() => {
@@ -33,6 +32,8 @@ export function AnimatedThread({ nodes, stagger = 600 }: Props) {
         setActive(i);
         if (i < nodes.length) {
           timeoutId = setTimeout(tick, stagger);
+        } else if (replayMs > 0) {
+          timeoutId = setTimeout(run, replayMs);
         }
       };
       timeoutId = setTimeout(tick, stagger);
@@ -43,7 +44,7 @@ export function AnimatedThread({ nodes, stagger = 600 }: Props) {
       cancelled = true;
       clearTimeout(timeoutId);
     };
-  }, [nodes, stagger]);
+  }, [nodes, stagger, replayMs]);
 
   const stepX = nodes.length === 1 ? 50 : 100 / (nodes.length - 1);
 
@@ -96,20 +97,21 @@ export function AnimatedThread({ nodes, stagger = 600 }: Props) {
           return (
             <li
               key={i}
-              className="text-center leading-tight"
+              className="min-h-[3.25rem] text-center leading-tight"
               style={{
                 opacity: visible ? 1 : 0,
-                transform: visible ? 'translateY(0)' : 'translateY(4px)',
-                transition: 'opacity 320ms var(--ease-out-soft), transform 320ms var(--ease-out-soft)',
+                transition: 'opacity 320ms var(--ease-out-soft)',
                 transitionDelay: `${i * 40}ms`,
               }}
             >
               <div className="mono text-[0.65rem] font-medium uppercase tracking-wider text-[color:var(--color-ink-soft)]">
                 {n.label}
               </div>
-              {n.note ? (
-                <div className="ai mt-1 text-xs italic">&ldquo;{n.note}&rdquo;</div>
-              ) : null}
+              <div className="mt-1 h-[2rem]">
+                {n.note ? (
+                  <div className="ai text-xs italic">&ldquo;{n.note}&rdquo;</div>
+                ) : null}
+              </div>
             </li>
           );
         })}

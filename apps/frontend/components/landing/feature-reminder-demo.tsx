@@ -1,6 +1,9 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Bell, CalendarCheck, Clock, Mail } from 'lucide-react';
+import { DemoStage } from './demo-stage';
+import { cn } from '@/lib/utils';
 
 const FEED = [
   {
@@ -33,10 +36,31 @@ const FEED = [
   },
 ];
 
-// Static feed — no cards sliding in/out (that resized the section).
 export function FeatureReminderDemo() {
+  const [visibleCount, setVisibleCount] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      while (!cancelled) {
+        setVisibleCount(0);
+        await wait(600);
+        for (let i = 1; i <= FEED.length; i++) {
+          if (cancelled) return;
+          setVisibleCount(i);
+          await wait(900);
+        }
+        await wait(2600);
+      }
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
-    <div className="min-h-[320px] rounded-xl border border-[color:var(--color-mist)] bg-[color:var(--color-paper)] p-5 shadow-sm">
+    <DemoStage height={340}>
       <div className="mb-4 flex items-center justify-between">
         <span className="mono text-[0.65rem] uppercase tracking-wider text-[color:var(--color-ink-soft)]">
           Activity feed
@@ -46,9 +70,11 @@ export function FeatureReminderDemo() {
         </span>
       </div>
 
-      <div className="flex flex-col gap-2">
-        {FEED.map((n) => {
+      {/* All slots always in DOM — opacity only, fixed row height. */}
+      <div className="flex h-[252px] flex-col justify-end gap-2 overflow-hidden">
+        {FEED.map((n, i) => {
           const Icon = n.icon;
+          const visible = i < visibleCount;
           const toneColor = {
             thread: 'var(--color-thread)',
             clay: 'var(--color-clay)',
@@ -58,7 +84,10 @@ export function FeatureReminderDemo() {
           return (
             <div
               key={n.title}
-              className="flex items-start gap-3 rounded-md border border-[color:var(--color-mist)] bg-[color:var(--color-paper-warm)] p-3"
+              className={cn(
+                'flex h-[58px] shrink-0 items-start gap-3 rounded-md border border-[color:var(--color-mist)] bg-[color:var(--color-paper-warm)] p-3 transition-all duration-500',
+                visible ? 'translate-x-0 opacity-100' : 'translate-x-4 opacity-0',
+              )}
             >
               <span
                 className="flex size-8 shrink-0 items-center justify-center rounded-full"
@@ -79,6 +108,10 @@ export function FeatureReminderDemo() {
           );
         })}
       </div>
-    </div>
+    </DemoStage>
   );
+}
+
+function wait(ms: number) {
+  return new Promise<void>((r) => setTimeout(r, ms));
 }
