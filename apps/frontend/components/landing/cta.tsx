@@ -4,18 +4,7 @@ import { Button } from '@/components/ui/button';
 
 export function CtaBand() {
   return (
-    <section className="relative overflow-hidden bg-[color:var(--color-ink)] py-20 text-[color:var(--color-paper)]">
-      {/* Same brand pattern, white-on-dark variant. */}
-      <div
-        className="bg-thread-pattern-dark absolute inset-0"
-        style={{
-          maskImage:
-            'radial-gradient(ellipse 70% 55% at 50% 50%, transparent 0%, black 80%)',
-          WebkitMaskImage:
-            'radial-gradient(ellipse 70% 55% at 50% 50%, transparent 0%, black 80%)',
-        }}
-        aria-hidden="true"
-      />
+    <section className="bg-cta-dark relative overflow-hidden py-20 text-[color:var(--color-paper)]">
       <div className="relative mx-auto max-w-4xl px-6 text-center">
         <h2 className="display text-4xl font-semibold leading-tight md:text-5xl">
           Stop starting from scratch every session.

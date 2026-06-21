@@ -104,12 +104,24 @@
 }
 
 @layer utilities {
-  /* Cleaner hero: very subtle accent wash + grid, mostly white. */
+  /* Hero: soft, ambient color blobs — Stripe / Notion style. No patterns, no
+     dot grids. Just large, very blurred radial gradients that read as light
+     spilling onto the page, not a "background design". */
   .bg-hero {
     background:
-      radial-gradient(800px 400px at 50% -5%, rgb(31 111 235 / 0.06), transparent 70%),
-      radial-gradient(700px 350px at 90% 10%, rgb(99 102 241 / 0.04), transparent 70%),
+      radial-gradient(80% 60% at 15% 0%, rgb(31 111 235 / 0.16), transparent 55%),
+      radial-gradient(70% 55% at 90% 5%, rgb(99 102 241 / 0.13), transparent 55%),
+      radial-gradient(60% 45% at 100% 90%, rgb(189 107 62 / 0.06), transparent 60%),
       var(--color-paper);
+  }
+
+  /* CTA band: same idea but inverted — soft cool washes on the dark surface
+     give the band depth without a pattern fighting the headline. */
+  .bg-cta-dark {
+    background:
+      radial-gradient(70% 60% at 20% 10%, rgb(31 111 235 / 0.22), transparent 60%),
+      radial-gradient(60% 55% at 80% 90%, rgb(99 102 241 / 0.18), transparent 60%),
+      var(--color-ink);
   }
 
   /* Section alternation — almost imperceptible grey to break monotony. */
@@ -173,26 +185,4 @@
     }
   }
 
-  /* Subtle dotted grid background for marketing sections. */
-  .bg-grid {
-    background-image: radial-gradient(circle, rgb(10 10 10 / 0.08) 1px, transparent 1px);
-    background-size: 24px 24px;
-    background-position: center;
-  }
-
-  /* Brand motif background — Thread logo (●⌣●⌣●) tiled at low opacity.
-     Background-color intentionally omitted so the pattern can be layered as
-     an overlay (e.g. on top of a hero gradient). Set bg-color separately if
-     used as a full section background. */
-  .bg-thread-pattern {
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120' fill='none'%3E%3Cg opacity='0.18' transform='translate(28 56)'%3E%3Ccircle cx='0' cy='4' r='2.6' fill='%231f6feb'/%3E%3Ccircle cx='32' cy='4' r='2.6' fill='%231f6feb'/%3E%3Ccircle cx='64' cy='4' r='2.6' fill='%231f6feb'/%3E%3Cpath d='M0 4 Q 16 -8 32 4 T 64 4' stroke='%231f6feb' stroke-width='1.6' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E");
-    background-size: 120px 120px;
-    background-repeat: repeat;
-  }
-
-  .bg-thread-pattern-dark {
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120' fill='none'%3E%3Cg opacity='0.14' transform='translate(28 56)'%3E%3Ccircle cx='0' cy='4' r='2.6' fill='%23ffffff'/%3E%3Ccircle cx='32' cy='4' r='2.6' fill='%23ffffff'/%3E%3Ccircle cx='64' cy='4' r='2.6' fill='%23ffffff'/%3E%3Cpath d='M0 4 Q 16 -8 32 4 T 64 4' stroke='%23ffffff' stroke-width='1.6' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E");
-    background-size: 120px 120px;
-    background-repeat: repeat;
-  }
 }

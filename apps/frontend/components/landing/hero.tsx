@@ -27,17 +27,6 @@ const TRUST_BAR = [
 export function Hero() {
   return (
     <section className="bg-hero relative overflow-hidden pt-32 pb-24">
-      {/* Brand motif background — fades out toward the headline. */}
-      <div
-        className="bg-thread-pattern absolute inset-0"
-        style={{
-          maskImage:
-            'radial-gradient(ellipse 80% 60% at 50% 40%, transparent 0%, black 75%)',
-          WebkitMaskImage:
-            'radial-gradient(ellipse 80% 60% at 50% 40%, transparent 0%, black 75%)',
-        }}
-        aria-hidden="true"
-      />
       {/* Cursor-following glow — Linear-style premium feel. */}
       <MouseSpotlight />
 
