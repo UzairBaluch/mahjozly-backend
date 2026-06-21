@@ -14,10 +14,10 @@ const ROWS: { feature: string; calendly: Cell; otter: Cell; us: Cell; note?: str
   { feature: 'Open source / self-hostable', calendly: 'no', otter: 'no', us: 'yes' },
 ];
 
-const CELL: Record<Cell, { icon: React.ComponentType<{ size?: number }>; color: string; label: string }> = {
-  yes: { icon: Check, color: 'var(--color-thread)', label: 'Yes' },
-  no: { icon: X, color: 'var(--color-clay)', label: 'No' },
-  partial: { icon: Minus, color: 'var(--color-dusk)', label: 'Partial' },
+const CELL: Record<Cell, { icon: React.ComponentType<{ size?: number }>; color: string; bg: string; label: string }> = {
+  yes: { icon: Check, color: 'var(--color-thread)', bg: 'var(--color-thread-soft)', label: 'Yes' },
+  no: { icon: X, color: 'var(--color-ink-soft)', bg: 'var(--color-mist-soft)', label: 'No' },
+  partial: { icon: Minus, color: 'var(--color-dusk)', bg: 'var(--color-dusk-soft)', label: 'Partial' },
 };
 
 export function Comparison() {
@@ -75,12 +75,12 @@ export function Comparison() {
 }
 
 function CellTd({ value, highlight }: { value: Cell; highlight?: boolean }) {
-  const { icon: Icon, color, label } = CELL[value];
+  const { icon: Icon, color, bg, label } = CELL[value];
   return (
     <td className={'py-3 px-4 text-center ' + (highlight ? 'bg-[color:var(--color-thread)]/5' : '')}>
       <span
         className="inline-flex size-7 items-center justify-center rounded-full"
-        style={{ backgroundColor: `${color}1A`, color }}
+        style={{ backgroundColor: bg, color }}
         aria-label={label}
       >
         <Icon size={14} />

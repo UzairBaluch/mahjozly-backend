@@ -1,33 +1,47 @@
 @import 'tailwindcss';
 
 @theme {
-  /* Core palette (locked from design spec). */
-  --color-paper: #eef0ec;
-  --color-paper-warm: #f5f4ef;
-  --color-ink: #1c2321;
-  --color-ink-soft: #3a423e;
-  --color-thread: #36675f;
-  --color-thread-hover: #2a504a;
-  --color-thread-soft: #c2d3cf;
-  --color-clay: #bd6b3e;
-  --color-clay-hover: #a55a30;
-  --color-dusk: #6c5e8a;
-  --color-dusk-soft: #d2cbe1;
-  --color-mist: #c9cfc8;
-  --color-mist-soft: #e3e6e0;
+  /* ─── Core palette ─────────────────────────────────────────────────────
+   * Cal.com / Linear-style clean: pure white, near-black, single accent.
+   * Token names kept from the original spec so component files don't churn —
+   * but the hex values now match the new direction. */
 
-  /* Fonts (driven from `next/font` variables on <html>). */
+  /* Backgrounds */
+  --color-paper: #ffffff;          /* primary surface */
+  --color-paper-warm: #fafafa;     /* secondary surface, section alternation */
+
+  /* Text */
+  --color-ink: #0a0a0a;            /* primary text (near-black) */
+  --color-ink-soft: #525252;       /* secondary text (mid-grey) */
+
+  /* Accent — single bold color, used for the thread + key highlights */
+  --color-thread: #1f6feb;         /* deep blue, GitHub-style */
+  --color-thread-hover: #1859c4;
+  --color-thread-soft: #e1edff;    /* tint background for selections */
+
+  /* CTA — black buttons (Cal.com style); name kept for compatibility */
+  --color-clay: #0a0a0a;
+  --color-clay-hover: #1f1f1f;
+
+  /* AI-specific — violet so machine-written content stays visually distinct */
+  --color-dusk: #6366f1;           /* indigo-500 */
+  --color-dusk-soft: #eef2ff;
+
+  /* Borders / dividers */
+  --color-mist: #e5e5e5;
+  --color-mist-soft: #f5f5f5;
+
+  /* Fonts — Inter for everything, Geist Mono for utility. */
   --font-sans: var(--font-sans, ui-sans-serif, system-ui, sans-serif);
-  --font-display:
-    var(--font-display, ui-serif, Georgia, serif);
+  --font-display: var(--font-sans);
   --font-mono:
     var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
 
-  /* Shadows — soft, paper-y feel, never harsh. */
-  --shadow-xs: 0 1px 2px rgb(28 35 33 / 0.04);
-  --shadow-sm: 0 2px 8px rgb(28 35 33 / 0.06);
-  --shadow-md: 0 8px 24px rgb(28 35 33 / 0.08);
-  --shadow-lg: 0 20px 50px rgb(28 35 33 / 0.10);
+  /* Shadows — crisper than before; small radius, low spread, more contrast. */
+  --shadow-xs: 0 1px 0 rgb(10 10 10 / 0.04), 0 1px 2px rgb(10 10 10 / 0.04);
+  --shadow-sm: 0 1px 2px rgb(10 10 10 / 0.04), 0 2px 4px rgb(10 10 10 / 0.04);
+  --shadow-md: 0 4px 12px rgb(10 10 10 / 0.06), 0 2px 4px rgb(10 10 10 / 0.04);
+  --shadow-lg: 0 12px 32px rgb(10 10 10 / 0.08), 0 4px 12px rgb(10 10 10 / 0.06);
 
   /* Animation timing curves. */
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
@@ -49,34 +63,40 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
-  /* AI-generated content — every block tagged with .ai uses Dusk Lavender. */
+  /* AI-generated content — distinct visual identity from human-entered data. */
   .ai {
     color: var(--color-dusk);
   }
 
-  /* Mono utility for IDs, timestamps, counters — the "ledger" feel. */
+  /* Mono utility for IDs, timestamps, counters. */
   .mono {
     font-family: var(--font-mono);
     font-feature-settings: 'tnum';
   }
 
-  /* Display headings use Source Serif 4. */
+  /* "Display" class — kept for compatibility with existing components, but now
+     it's Inter at heavy weight with tight tracking, not a serif. */
   .display {
-    font-family: var(--font-display);
-    letter-spacing: -0.018em;
-    font-feature-settings: 'ss01', 'ss02';
+    font-family: var(--font-sans);
+    font-weight: 700;
+    letter-spacing: -0.025em;
   }
 
-  /* Visible focus ring — Thread Teal, accessible across light backgrounds. */
+  /* Headings get the tight Cal.com tracking automatically. */
+  h1, h2, h3, h4 {
+    letter-spacing: -0.02em;
+  }
+
+  /* Visible focus ring — accent color, accessible across light backgrounds. */
   *:focus-visible {
     outline: 2px solid var(--color-thread);
     outline-offset: 2px;
-    border-radius: 4px;
+    border-radius: 6px;
   }
 
-  /* Selection */
   ::selection {
     background-color: var(--color-thread);
     color: var(--color-paper);
@@ -84,31 +104,36 @@
 }
 
 @layer utilities {
-  /* Subtle warm hero gradient. */
+  /* Cleaner hero: very subtle accent wash + grid, mostly white. */
   .bg-hero {
     background:
-      radial-gradient(1200px 600px at 50% -10%, rgb(54 103 95 / 0.08), transparent 60%),
-      radial-gradient(900px 500px at 90% 20%, rgb(189 107 62 / 0.06), transparent 60%),
-      linear-gradient(180deg, var(--color-paper-warm), var(--color-paper));
+      radial-gradient(800px 400px at 50% -5%, rgb(31 111 235 / 0.06), transparent 70%),
+      radial-gradient(700px 350px at 90% 10%, rgb(99 102 241 / 0.04), transparent 70%),
+      var(--color-paper);
   }
 
+  /* Section alternation — almost imperceptible grey to break monotony. */
   .bg-section-tint {
-    background: linear-gradient(180deg, var(--color-paper), var(--color-mist-soft) 60%, var(--color-paper));
+    background: var(--color-paper-warm);
   }
 
   /* Card lift on hover. */
   .card-lift {
-    transition: transform 200ms var(--ease-out-soft), box-shadow 200ms var(--ease-out-soft);
+    transition:
+      transform 200ms var(--ease-out-soft),
+      box-shadow 200ms var(--ease-out-soft),
+      border-color 200ms var(--ease-out-soft);
   }
   .card-lift:hover {
-    transform: translateY(-2px);
+    transform: translateY(-1px);
     box-shadow: var(--shadow-md);
+    border-color: rgb(10 10 10 / 0.12);
   }
 
   /* Thread stroke draw + dot pop — used by the hero. */
   @keyframes draw-line {
     from { stroke-dashoffset: 200; }
-    to { stroke-dashoffset: 0; }
+    to   { stroke-dashoffset: 0; }
   }
   @keyframes pop {
     0%   { transform: scale(0); opacity: 0; }
@@ -137,7 +162,6 @@
   .anim-blink          { animation: blink 1s steps(1) infinite; }
   .anim-pulse-soft     { animation: pulse-soft 2s ease-in-out infinite; }
 
-  /* Static fallback for users who prefer no motion. */
   @media (prefers-reduced-motion: reduce) {
     .anim-fade-up,
     .anim-slide-in-right,
@@ -149,12 +173,26 @@
     }
   }
 
-  /* Subtle grid background for marketing sections. */
+  /* Subtle dotted grid background for marketing sections. */
   .bg-grid {
-    background-image:
-      linear-gradient(to right, rgb(28 35 33 / 0.04) 1px, transparent 1px),
-      linear-gradient(to bottom, rgb(28 35 33 / 0.04) 1px, transparent 1px);
-    background-size: 32px 32px;
+    background-image: radial-gradient(circle, rgb(10 10 10 / 0.08) 1px, transparent 1px);
+    background-size: 24px 24px;
     background-position: center;
+  }
+
+  /* Brand motif background — Thread logo (●⌣●⌣●) tiled at low opacity.
+     Background-color intentionally omitted so the pattern can be layered as
+     an overlay (e.g. on top of a hero gradient). Set bg-color separately if
+     used as a full section background. */
+  .bg-thread-pattern {
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120' fill='none'%3E%3Cg opacity='0.18' transform='translate(28 56)'%3E%3Ccircle cx='0' cy='4' r='2.6' fill='%231f6feb'/%3E%3Ccircle cx='32' cy='4' r='2.6' fill='%231f6feb'/%3E%3Ccircle cx='64' cy='4' r='2.6' fill='%231f6feb'/%3E%3Cpath d='M0 4 Q 16 -8 32 4 T 64 4' stroke='%231f6feb' stroke-width='1.6' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: 120px 120px;
+    background-repeat: repeat;
+  }
+
+  .bg-thread-pattern-dark {
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120' fill='none'%3E%3Cg opacity='0.14' transform='translate(28 56)'%3E%3Ccircle cx='0' cy='4' r='2.6' fill='%23ffffff'/%3E%3Ccircle cx='32' cy='4' r='2.6' fill='%23ffffff'/%3E%3Ccircle cx='64' cy='4' r='2.6' fill='%23ffffff'/%3E%3Cpath d='M0 4 Q 16 -8 32 4 T 64 4' stroke='%23ffffff' stroke-width='1.6' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: 120px 120px;
+    background-repeat: repeat;
   }
 }

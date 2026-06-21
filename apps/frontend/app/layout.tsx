@@ -1,24 +1,17 @@
 import type { Metadata } from 'next';
-import { Inter, Source_Serif_4, Geist_Mono } from 'next/font/google';
+import { Inter, Geist_Mono } from 'next/font/google';
 import './globals.css';
 
-// Body — modern, neutral, what most premium SaaS uses (Linear, Vercel, Cal.com style).
+// Body + display — one family for everything (Cal.com / Linear / Vercel pattern).
+// Full weight range so headings can push to 700/800 with tight tracking.
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-sans',
   display: 'swap',
+  weight: ['400', '500', '600', '700', '800'],
 });
 
-// Display — characterful serif for the "thread of memory" feel; used with restraint.
-const sourceSerif = Source_Serif_4({
-  subsets: ['latin'],
-  variable: '--font-display',
-  weight: ['400', '500', '600', '700'],
-  style: ['normal', 'italic'],
-  display: 'swap',
-});
-
-// Utility/data — modern monospace for timestamps, IDs, counters. The "ledger" feel.
+// Utility/data — monospaced for timestamps, IDs, counters. The "ledger" feel.
 const geistMono = Geist_Mono({
   subsets: ['latin'],
   variable: '--font-mono',
@@ -33,7 +26,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${sourceSerif.variable} ${geistMono.variable}`}>
+    <html lang="en" className={`${inter.variable} ${geistMono.variable}`}>
       <body className="font-sans antialiased">{children}</body>
     </html>
   );

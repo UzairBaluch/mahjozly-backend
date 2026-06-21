@@ -14,7 +14,17 @@ const HERO_NODES = [
 export function Hero() {
   return (
     <section className="bg-hero relative overflow-hidden pt-32 pb-24">
-      <div className="bg-grid absolute inset-0 opacity-40" aria-hidden="true" />
+      {/* Brand motif tile, faded toward the center so it never fights with the headline. */}
+      <div
+        className="bg-thread-pattern absolute inset-0"
+        style={{
+          maskImage:
+            'radial-gradient(ellipse 80% 60% at 50% 40%, transparent 0%, black 75%)',
+          WebkitMaskImage:
+            'radial-gradient(ellipse 80% 60% at 50% 40%, transparent 0%, black 75%)',
+        }}
+        aria-hidden="true"
+      />
 
       <div className="relative mx-auto max-w-5xl px-6 text-center">
         <div className="anim-fade-up inline-flex items-center gap-2 rounded-full border border-[color:var(--color-mist)] bg-[color:var(--color-paper)]/80 px-3 py-1 text-xs backdrop-blur">
@@ -24,10 +34,10 @@ export function Hero() {
           </span>
         </div>
 
-        <h1 className="anim-fade-up display mt-6 text-balance text-5xl font-semibold leading-[1.05] md:text-7xl">
-          Calendly remembers your <span className="italic">time slots</span>.
+        <h1 className="anim-fade-up mt-6 text-balance text-5xl font-bold leading-[1.02] tracking-tight md:text-7xl">
+          Calendly remembers your <span className="text-[color:var(--color-ink-soft)]">time slots</span>.
           <br />
-          Mahjozly remembers your <span className="italic text-[color:var(--color-thread)]">clients</span>.
+          Mahjozly remembers your <span className="text-[color:var(--color-thread)]">clients</span>.
         </h1>
 
         <p className="anim-fade-up mx-auto mt-6 max-w-2xl text-balance text-base text-[color:var(--color-ink-soft)] md:text-lg">
@@ -77,7 +87,7 @@ function TrustBar() {
       </p>
       <div className="mt-5 flex flex-wrap items-center justify-center gap-x-10 gap-y-3 opacity-60">
         {COMPANIES.map((c) => (
-          <span key={c} className="display text-base italic">
+          <span key={c} className="text-sm font-medium tracking-tight">
             {c}
           </span>
         ))}

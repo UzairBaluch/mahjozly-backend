@@ -8,14 +8,16 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
+        // Primary = black button (secondary CTA, "Get started" in nav etc.)
         primary:
-          'bg-[color:var(--color-ink)] text-[color:var(--color-paper)] hover:bg-[color:var(--color-thread)]',
+          'bg-[color:var(--color-ink)] text-white hover:bg-[color:var(--color-clay-hover)]',
+        // Accent = blue button (the main "Start free" hero CTA)
         accent:
-          'bg-[color:var(--color-clay)] text-white hover:opacity-90',
+          'bg-[color:var(--color-thread)] text-white hover:bg-[color:var(--color-thread-hover)]',
         outline:
-          'border border-[color:var(--color-ink)] bg-transparent text-[color:var(--color-ink)] hover:bg-[color:var(--color-mist)]',
+          'border border-[color:var(--color-mist)] bg-[color:var(--color-paper)] text-[color:var(--color-ink)] hover:border-[color:var(--color-ink)]',
         ghost:
-          'text-[color:var(--color-ink)] hover:bg-[color:var(--color-mist)]',
+          'text-[color:var(--color-ink)] hover:bg-[color:var(--color-mist-soft)]',
       },
       size: {
         sm: 'h-8 px-3',
