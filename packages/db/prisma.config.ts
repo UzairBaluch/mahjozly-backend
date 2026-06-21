@@ -1,6 +1,12 @@
 // Prisma CLI config (v7): schema/migrations paths, seed command, datasource URL from env.
-import 'dotenv/config';
+// .env lives at the monorepo root; resolve it relative to this file so commands run from any cwd.
+import { config as loadEnv } from 'dotenv';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 import { defineConfig, env } from 'prisma/config';
+
+const here = dirname(fileURLToPath(import.meta.url));
+loadEnv({ path: resolve(here, '../../.env') });
 
 export default defineConfig({
   schema: 'prisma/schema.prisma',

@@ -1,7 +1,13 @@
 // Load .env into process.env before we read it — Node does not read .env automatically,
 // and Zod would see empty values if this ran later.
-import 'dotenv/config';
+// .env lives at the monorepo root; resolve it from this file so cwd doesn't matter.
+import { config as loadEnv } from 'dotenv';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 import { z } from 'zod';
+
+const here = dirname(fileURLToPath(import.meta.url));
+loadEnv({ path: resolve(here, '../../../../.env') });
 
 // One place that defines "the app is allowed to start only if config looks like this".
 // Typos and missing keys get caught here instead of failing deep inside a random route.
