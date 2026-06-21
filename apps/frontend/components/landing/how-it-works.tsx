@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Brain, CalendarCheck, Check, Mail, Video } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -63,13 +63,7 @@ export function HowItWorks() {
                 isActive={activeStep === i}
                 onSelect={() => selectStep(i)}
               >
-                {i === 0 ? (
-                  <StepCalendarDemo isActive={activeStep === 0} />
-                ) : i === 1 ? (
-                  <StepVideoDemo isActive={activeStep === 1} />
-                ) : (
-                  <StepBriefDemo isActive={activeStep === 2} />
-                )}
+                {i === 0 ? <StepCalendarDemo /> : i === 1 ? <StepVideoDemo /> : <StepBriefDemo />}
               </StepCard>
             ))}
           </div>
@@ -156,7 +150,7 @@ function StepCard({
         }
       }}
       className={cn(
-        'card-lift relative cursor-pointer rounded-xl border bg-[color:var(--color-paper)] p-6 text-left transition-all duration-300',
+        'card-lift relative flex min-h-[540px] cursor-pointer flex-col rounded-xl border bg-[color:var(--color-paper)] p-6 text-left transition-colors duration-300',
         isActive
           ? 'border-[color:var(--color-thread)] shadow-md ring-1 ring-[color:var(--color-thread)]/30'
           : 'border-[color:var(--color-mist)] opacity-90 hover:opacity-100',
@@ -199,47 +193,12 @@ function StepCard({
   );
 }
 
-function StepCalendarDemo({ isActive }: { isActive: boolean }) {
-  const [phase, setPhase] = useState<'idle' | 'date' | 'slot' | 'booked'>('idle');
-  const [selectedDate, setSelectedDate] = useState<number | null>(null);
-  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+function StepCalendarDemo() {
+  const [phase, setPhase] = useState<'idle' | 'date' | 'slot' | 'booked'>('booked');
+  const [selectedDate, setSelectedDate] = useState<number | null>(12);
+  const [selectedSlot, setSelectedSlot] = useState<string | null>('10:30');
   const [conflictDay, setConflictDay] = useState<number | null>(null);
-  const [emailSent, setEmailSent] = useState(false);
-
-  const runAuto = useCallback(async () => {
-    setPhase('idle');
-    setSelectedDate(null);
-    setSelectedSlot(null);
-    setConflictDay(null);
-    setEmailSent(false);
-    await wait(800);
-    setPhase('date');
-    setSelectedDate(12);
-    await wait(900);
-    setPhase('slot');
-    await wait(700);
-    setSelectedSlot('10:30');
-    await wait(600);
-    setPhase('booked');
-    setEmailSent(true);
-    await wait(2800);
-  }, []);
-
-  useEffect(() => {
-    if (!isActive) return;
-    let cancelled = false;
-
-    const loop = async () => {
-      while (!cancelled && isActive) {
-        await runAuto();
-      }
-    };
-
-    loop();
-    return () => {
-      cancelled = true;
-    };
-  }, [isActive, runAuto]);
+  const [emailSent, setEmailSent] = useState(true);
 
   const pickDate = (day: number) => {
     if (BUSY_DAYS.has(day)) {
@@ -287,7 +246,7 @@ function StepCalendarDemo({ isActive }: { isActive: boolean }) {
                 isSelected && 'bg-[color:var(--color-thread)] font-medium text-[color:var(--color-paper)]',
                 !isSelected && isBusy && 'bg-[color:var(--color-mist)] text-[color:var(--color-ink-soft)]/60 line-through',
                 !isSelected && !isBusy && 'text-[color:var(--color-ink-soft)] hover:bg-[color:var(--color-thread-soft)]',
-                isConflict && 'animate-[fade-up_200ms_var(--ease-out-soft)_both] ring-2 ring-red-400/60',
+                isConflict && 'ring-2 ring-red-400/60',
               )}
             >
               {day}
@@ -302,73 +261,49 @@ function StepCalendarDemo({ isActive }: { isActive: boolean }) {
         </p>
       ) : null}
 
-      {phase === 'slot' || phase === 'booked' ? (
-        <div className="anim-fade-up mt-3 border-t border-[color:var(--color-mist)] pt-3">
-          <p className="mono mb-2 text-[0.6rem] uppercase tracking-wider text-[color:var(--color-ink-soft)]">
-            Available slots
-          </p>
-          <div className="flex flex-wrap gap-1.5">
-            {SLOTS.map((slot) => (
-              <button
-                key={slot}
-                type="button"
-                onClick={() => pickSlot(slot)}
-                className={cn(
-                  'mono rounded-md border px-2 py-1 text-[0.65rem] transition-colors',
-                  selectedSlot === slot
-                    ? 'border-[color:var(--color-thread)] bg-[color:var(--color-thread-soft)] text-[color:var(--color-thread)]'
-                    : 'border-[color:var(--color-mist)] text-[color:var(--color-ink-soft)] hover:border-[color:var(--color-thread)]/40',
-                )}
-              >
-                {slot}
-              </button>
-            ))}
-          </div>
-        </div>
-      ) : null}
+      <div className="mt-3 min-h-[7.5rem] border-t border-[color:var(--color-mist)] pt-3">
+        {phase === 'slot' || phase === 'booked' ? (
+          <>
+            <p className="mono mb-2 text-[0.6rem] uppercase tracking-wider text-[color:var(--color-ink-soft)]">
+              Available slots
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {SLOTS.map((slot) => (
+                <button
+                  key={slot}
+                  type="button"
+                  onClick={() => pickSlot(slot)}
+                  className={cn(
+                    'mono rounded-md border px-2 py-1 text-[0.65rem] transition-colors',
+                    selectedSlot === slot
+                      ? 'border-[color:var(--color-thread)] bg-[color:var(--color-thread-soft)] text-[color:var(--color-thread)]'
+                      : 'border-[color:var(--color-mist)] text-[color:var(--color-ink-soft)] hover:border-[color:var(--color-thread)]/40',
+                  )}
+                >
+                  {slot}
+                </button>
+              ))}
+            </div>
+          </>
+        ) : (
+          <p className="text-[0.65rem] text-[color:var(--color-ink-soft)]/60">Select a date to see slots</p>
+        )}
 
-      {emailSent ? (
-        <div className="anim-fade-up mt-3 flex items-center gap-2 rounded-md border border-[color:var(--color-thread)]/30 bg-[color:var(--color-thread-soft)]/50 px-2 py-1.5 text-[0.65rem] text-[color:var(--color-thread)]">
-          <Mail size={12} />
-          <span className="mono uppercase tracking-wider">Confirmation email sent</span>
-          <Check size={12} className="ml-auto" />
-        </div>
-      ) : null}
+        {emailSent ? (
+          <div className="mt-3 flex items-center gap-2 rounded-md border border-[color:var(--color-thread)]/30 bg-[color:var(--color-thread-soft)]/50 px-2 py-1.5 text-[0.65rem] text-[color:var(--color-thread)]">
+            <Mail size={12} />
+            <span className="mono uppercase tracking-wider">Confirmation email sent</span>
+            <Check size={12} className="ml-auto" />
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
 
-function StepVideoDemo({ isActive }: { isActive: boolean }) {
-  const [phase, setPhase] = useState<'waiting' | 'recording' | 'transcribing'>('waiting');
-  const [seconds, setSeconds] = useState(0);
-
-  useEffect(() => {
-    if (!isActive) return;
-    let cancelled = false;
-
-    const loop = async () => {
-      while (!cancelled) {
-        setPhase('waiting');
-        setSeconds(0);
-        await wait(900);
-        if (cancelled) return;
-        setPhase('recording');
-        for (let s = 0; s <= 23; s++) {
-          if (cancelled) return;
-          setSeconds(s);
-          await wait(120);
-        }
-        if (cancelled) return;
-        setPhase('transcribing');
-        await wait(2400);
-      }
-    };
-
-    loop();
-    return () => {
-      cancelled = true;
-    };
-  }, [isActive]);
+function StepVideoDemo() {
+  const [phase, setPhase] = useState<'waiting' | 'recording' | 'transcribing'>('transcribing');
+  const [seconds] = useState(23);
 
   const mm = String(Math.floor(seconds / 60)).padStart(2, '0');
   const ss = String(seconds % 60).padStart(2, '0');
@@ -384,16 +319,12 @@ function StepVideoDemo({ isActive }: { isActive: boolean }) {
         onClick={() => {
           if (phase === 'waiting') {
             setPhase('recording');
-            setSeconds(0);
           }
         }}
       >
         <div className="grid grid-cols-2 gap-2">
           <div
-            className={cn(
-              'aspect-video rounded-sm bg-gradient-to-br from-[color:var(--color-thread)] to-[color:var(--color-ink-soft)] transition-transform',
-              phase === 'recording' && 'scale-[1.02]',
-            )}
+            className="aspect-video rounded-sm bg-gradient-to-br from-[color:var(--color-thread)] to-[color:var(--color-ink-soft)]"
           />
           <div className="aspect-video rounded-sm bg-gradient-to-br from-[color:var(--color-clay)] to-[color:var(--color-dusk)]" />
         </div>
@@ -447,49 +378,10 @@ const BRIEF_QUOTE =
   'Wants more practice problems. Open with last week\'s pacing recap.';
 const BRIEF_ITEMS = ['Review homework on integrals', 'Cover exam strategies for week 3'];
 
-function StepBriefDemo({ isActive }: { isActive: boolean }) {
-  const [phase, setPhase] = useState<'idle' | 'typing' | 'items' | 'done'>('idle');
-  const [typed, setTyped] = useState('');
-  const [visibleItems, setVisibleItems] = useState(0);
-
-  useEffect(() => {
-    if (!isActive) return;
-    let cancelled = false;
-
-    const loop = async () => {
-      while (!cancelled) {
-        setPhase('idle');
-        setTyped('');
-        setVisibleItems(0);
-        await wait(600);
-        if (cancelled) return;
-
-        setPhase('typing');
-        for (let i = 1; i <= BRIEF_QUOTE.length; i++) {
-          if (cancelled) return;
-          setTyped(BRIEF_QUOTE.slice(0, i));
-          await wait(16);
-        }
-        if (cancelled) return;
-
-        setPhase('items');
-        for (let i = 1; i <= BRIEF_ITEMS.length; i++) {
-          if (cancelled) return;
-          setVisibleItems(i);
-          await wait(400);
-        }
-        if (cancelled) return;
-
-        setPhase('done');
-        await wait(2600);
-      }
-    };
-
-    loop();
-    return () => {
-      cancelled = true;
-    };
-  }, [isActive]);
+function StepBriefDemo() {
+  const [phase] = useState<'idle' | 'typing' | 'items' | 'done'>('done');
+  const [typed] = useState(BRIEF_QUOTE);
+  const [visibleItems] = useState(BRIEF_ITEMS.length);
 
   return (
     <div className="rounded-md border border-[color:var(--color-mist)] bg-[color:var(--color-paper-warm)] p-4">
@@ -510,30 +402,14 @@ function StepBriefDemo({ isActive }: { isActive: boolean }) {
       </div>
 
       <p className="ai mt-2 min-h-[3.5rem] text-sm italic leading-relaxed">
-        {typed ? (
-          <>
-            &ldquo;{typed}
-            {phase === 'typing' ? (
-              <span className="anim-blink ml-0.5 inline-block h-3 w-[2px] translate-y-[1px] bg-[color:var(--color-dusk)] align-middle" />
-            ) : null}
-            &rdquo;
-          </>
-        ) : (
-          <span className="opacity-40">Generating brief from last session…</span>
-        )}
+        &ldquo;{typed}&rdquo;
       </p>
 
       <ul className="ai mt-3 min-h-[2.5rem] space-y-1 text-xs">
         {BRIEF_ITEMS.slice(0, visibleItems).map((item) => (
-          <li key={item} className="anim-fade-up">
-            · {item}
-          </li>
+          <li key={item}>· {item}</li>
         ))}
       </ul>
     </div>
   );
-}
-
-function wait(ms: number) {
-  return new Promise<void>((r) => window.setTimeout(r, ms));
 }

@@ -99,7 +99,7 @@ export function Pricing() {
           <BillingToggle billing={billing} onChange={setBilling} />
         </header>
 
-        <div className="mt-16 grid items-stretch gap-6 md:grid-cols-3 md:items-center">
+        <div className="mt-16 grid items-stretch gap-6 md:grid-cols-3">
           {TIERS.map((t) => (
             <TierCard key={t.name} tier={t} billing={billing} />
           ))}
