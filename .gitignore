@@ -1,10 +1,19 @@
 # Dependencies
 node_modules/
+**/node_modules/
 
 # Build
 dist/
 build/
+**/dist/
+**/build/
 *.tsbuildinfo
+
+# Next.js
+.next/
+**/.next/
+.vercel
+.turbo
 
 # Environment — never commit secrets
 .env
@@ -13,6 +22,7 @@ build/
 
 # Logs
 logs/
+**/logs/
 *.log
 npm-debug.log*
 
@@ -44,5 +54,8 @@ docs/
 Mahjozly-Roadmap-Production.md
 Mahjozly-Master-Document.md
 
-/src/generated/prisma
+# Prisma generated client (lives under packages/db/node_modules in the new monorepo layout)
+packages/db/src/generated/
+
 .cursor/
+
