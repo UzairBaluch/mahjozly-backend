@@ -1,23 +1,45 @@
 @import 'tailwindcss';
 
 @theme {
-  /* Design tokens (from the design spec). */
+  /* Core palette (locked from design spec). */
   --color-paper: #eef0ec;
+  --color-paper-warm: #f5f4ef;
   --color-ink: #1c2321;
+  --color-ink-soft: #3a423e;
   --color-thread: #36675f;
+  --color-thread-hover: #2a504a;
+  --color-thread-soft: #c2d3cf;
   --color-clay: #bd6b3e;
+  --color-clay-hover: #a55a30;
   --color-dusk: #6c5e8a;
+  --color-dusk-soft: #d2cbe1;
   --color-mist: #c9cfc8;
+  --color-mist-soft: #e3e6e0;
 
-  /* Typography */
-  --font-display: 'Source Serif 4', ui-serif, Georgia, serif;
-  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
-  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* Fonts (driven from `next/font` variables on <html>). */
+  --font-sans: var(--font-sans, ui-sans-serif, system-ui, sans-serif);
+  --font-display:
+    var(--font-display, ui-serif, Georgia, serif);
+  --font-mono:
+    var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+
+  /* Shadows — soft, paper-y feel, never harsh. */
+  --shadow-xs: 0 1px 2px rgb(28 35 33 / 0.04);
+  --shadow-sm: 0 2px 8px rgb(28 35 33 / 0.06);
+  --shadow-md: 0 8px 24px rgb(28 35 33 / 0.08);
+  --shadow-lg: 0 20px 50px rgb(28 35 33 / 0.10);
+
+  /* Animation timing curves. */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @layer base {
   :root {
     color-scheme: light;
+  }
+
+  html {
+    scroll-behavior: smooth;
   }
 
   html,
@@ -29,8 +51,7 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* AI-generated content: every block tagged with .ai uses the Dusk Lavender tint
-     so machine-written text reads visually distinct from human-entered data. */
+  /* AI-generated content — every block tagged with .ai uses Dusk Lavender. */
   .ai {
     color: var(--color-dusk);
   }
@@ -44,20 +65,96 @@
   /* Display headings use Source Serif 4. */
   .display {
     font-family: var(--font-display);
-    letter-spacing: -0.01em;
+    letter-spacing: -0.018em;
+    font-feature-settings: 'ss01', 'ss02';
   }
 
-  /* Focus ring — Thread Teal, visible across light backgrounds, accessibility floor. */
+  /* Visible focus ring — Thread Teal, accessible across light backgrounds. */
   *:focus-visible {
     outline: 2px solid var(--color-thread);
     outline-offset: 2px;
+    border-radius: 4px;
   }
 
-  /* Static fallback for the thread animation when the user prefers reduced motion. */
+  /* Selection */
+  ::selection {
+    background-color: var(--color-thread);
+    color: var(--color-paper);
+  }
+}
+
+@layer utilities {
+  /* Subtle warm hero gradient. */
+  .bg-hero {
+    background:
+      radial-gradient(1200px 600px at 50% -10%, rgb(54 103 95 / 0.08), transparent 60%),
+      radial-gradient(900px 500px at 90% 20%, rgb(189 107 62 / 0.06), transparent 60%),
+      linear-gradient(180deg, var(--color-paper-warm), var(--color-paper));
+  }
+
+  .bg-section-tint {
+    background: linear-gradient(180deg, var(--color-paper), var(--color-mist-soft) 60%, var(--color-paper));
+  }
+
+  /* Card lift on hover. */
+  .card-lift {
+    transition: transform 200ms var(--ease-out-soft), box-shadow 200ms var(--ease-out-soft);
+  }
+  .card-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+
+  /* Thread stroke draw + dot pop — used by the hero. */
+  @keyframes draw-line {
+    from { stroke-dashoffset: 200; }
+    to { stroke-dashoffset: 0; }
+  }
+  @keyframes pop {
+    0%   { transform: scale(0); opacity: 0; }
+    60%  { transform: scale(1.3); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes slide-in-right {
+    from { opacity: 0; transform: translateX(20px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes blink {
+    0%, 49%   { opacity: 1; }
+    50%, 100% { opacity: 0; }
+  }
+  @keyframes pulse-soft {
+    0%, 100% { opacity: 0.4; }
+    50%      { opacity: 1; }
+  }
+
+  .anim-fade-up        { animation: fade-up 600ms var(--ease-out-soft) both; }
+  .anim-slide-in-right { animation: slide-in-right 500ms var(--ease-out-soft) both; }
+  .anim-blink          { animation: blink 1s steps(1) infinite; }
+  .anim-pulse-soft     { animation: pulse-soft 2s ease-in-out infinite; }
+
+  /* Static fallback for users who prefer no motion. */
   @media (prefers-reduced-motion: reduce) {
-    .thread-animated {
+    .anim-fade-up,
+    .anim-slide-in-right,
+    .anim-blink,
+    .anim-pulse-soft,
+    .thread-animated * {
       animation: none !important;
       transition: none !important;
     }
+  }
+
+  /* Subtle grid background for marketing sections. */
+  .bg-grid {
+    background-image:
+      linear-gradient(to right, rgb(28 35 33 / 0.04) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(28 35 33 / 0.04) 1px, transparent 1px);
+    background-size: 32px 32px;
+    background-position: center;
   }
 }

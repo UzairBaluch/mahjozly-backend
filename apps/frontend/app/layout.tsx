@@ -1,5 +1,29 @@
 import type { Metadata } from 'next';
+import { Inter, Source_Serif_4, Geist_Mono } from 'next/font/google';
 import './globals.css';
+
+// Body — modern, neutral, what most premium SaaS uses (Linear, Vercel, Cal.com style).
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-sans',
+  display: 'swap',
+});
+
+// Display — characterful serif for the "thread of memory" feel; used with restraint.
+const sourceSerif = Source_Serif_4({
+  subsets: ['latin'],
+  variable: '--font-display',
+  weight: ['400', '500', '600', '700'],
+  style: ['normal', 'italic'],
+  display: 'swap',
+});
+
+// Utility/data — modern monospace for timestamps, IDs, counters. The "ledger" feel.
+const geistMono = Geist_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'Mahjozly — Scheduling that remembers',
@@ -9,17 +33,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <head>
-        {/* Display + body + mono — IBM Plex (Sans & Mono) and Source Serif 4 served from Google Fonts. */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap"
-          rel="stylesheet"
-        />
-      </head>
-      <body>{children}</body>
+    <html lang="en" className={`${inter.variable} ${sourceSerif.variable} ${geistMono.variable}`}>
+      <body className="font-sans antialiased">{children}</body>
     </html>
   );
 }
