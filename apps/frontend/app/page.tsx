@@ -9,21 +9,23 @@ import { Pricing } from '@/components/landing/pricing';
 import { FAQ } from '@/components/landing/faq';
 import { CtaBand } from '@/components/landing/cta';
 import { LandingFooter } from '@/components/landing/footer';
+import { Reveal } from '@/components/landing/reveal';
 
 export default function Landing() {
   return (
     <>
       <LandingNav />
       <main>
+        {/* Hero already has its own intro animations; not wrapped. */}
         <Hero />
-        <HowItWorks />
+        <Reveal><HowItWorks /></Reveal>
         <FeatureSections />
-        <FeatureGrid />
-        <Comparison />
-        <Testimonials />
-        <Pricing />
-        <FAQ />
-        <CtaBand />
+        <Reveal><FeatureGrid /></Reveal>
+        <Reveal><Comparison /></Reveal>
+        <Reveal><Testimonials /></Reveal>
+        <Reveal><Pricing /></Reveal>
+        <Reveal><FAQ /></Reveal>
+        <Reveal><CtaBand /></Reveal>
       </main>
       <LandingFooter />
     </>

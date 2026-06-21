@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AnimatedThread } from './animated-thread';
+import { MouseSpotlight } from './mouse-spotlight';
+import { Marquee } from './marquee';
 
 const HERO_NODES = [
   { label: '1st session', note: 'Goals + history' },
@@ -11,10 +13,21 @@ const HERO_NODES = [
   { label: '12th session', note: 'Ready for next level' },
 ];
 
+const TRUST_BAR = [
+  'Lighthouse Coaching',
+  'Atlas Tutoring',
+  'Hearth Consulting',
+  'Forge Studio',
+  'Northwind Partners',
+  'Cedar Coaching Co.',
+  'Beacon Therapy',
+  'Threadline Tutors',
+];
+
 export function Hero() {
   return (
     <section className="bg-hero relative overflow-hidden pt-32 pb-24">
-      {/* Brand motif tile, faded toward the center so it never fights with the headline. */}
+      {/* Brand motif background — fades out toward the headline. */}
       <div
         className="bg-thread-pattern absolute inset-0"
         style={{
@@ -25,6 +38,8 @@ export function Hero() {
         }}
         aria-hidden="true"
       />
+      {/* Cursor-following glow — Linear-style premium feel. */}
+      <MouseSpotlight />
 
       <div className="relative mx-auto max-w-5xl px-6 text-center">
         <div className="anim-fade-up inline-flex items-center gap-2 rounded-full border border-[color:var(--color-mist)] bg-[color:var(--color-paper)]/80 px-3 py-1 text-xs backdrop-blur">
@@ -35,9 +50,11 @@ export function Hero() {
         </div>
 
         <h1 className="anim-fade-up mt-6 text-balance text-5xl font-bold leading-[1.02] tracking-tight md:text-7xl">
-          Calendly remembers your <span className="text-[color:var(--color-ink-soft)]">time slots</span>.
+          Calendly remembers your{' '}
+          <span className="text-[color:var(--color-ink-soft)]">time slots</span>.
           <br />
-          Mahjozly remembers your <span className="text-[color:var(--color-thread)]">clients</span>.
+          Mahjozly remembers your{' '}
+          <span className="text-[color:var(--color-thread)]">clients</span>.
         </h1>
 
         <p className="anim-fade-up mx-auto mt-6 max-w-2xl text-balance text-base text-[color:var(--color-ink-soft)] md:text-lg">
@@ -79,18 +96,13 @@ export function Hero() {
 }
 
 function TrustBar() {
-  const COMPANIES = ['Lighthouse Coaching', 'Atlas Tutoring', 'Hearth Consulting', 'Forge Studio', 'Northwind Partners'];
   return (
-    <div className="relative mx-auto mt-20 max-w-6xl px-6 text-center">
+    <div className="relative mx-auto mt-20 max-w-5xl px-6 text-center">
       <p className="mono text-xs uppercase tracking-widest text-[color:var(--color-ink-soft)]">
         Used by independent practices in early access
       </p>
-      <div className="mt-5 flex flex-wrap items-center justify-center gap-x-10 gap-y-3 opacity-60">
-        {COMPANIES.map((c) => (
-          <span key={c} className="text-sm font-medium tracking-tight">
-            {c}
-          </span>
-        ))}
+      <div className="mt-6 opacity-70">
+        <Marquee items={TRUST_BAR} />
       </div>
     </div>
   );

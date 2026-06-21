@@ -4,6 +4,8 @@ import { FeatureBookingDemo } from './feature-booking-demo';
 import { FeatureAiNotesDemo } from './feature-ai-notes-demo';
 import { FeatureTimelineDemo } from './feature-timeline-demo';
 import { FeatureReminderDemo } from './feature-reminder-demo';
+import { DemoFrame } from './demo-frame';
+import { Reveal } from './reveal';
 
 type Block = {
   eyebrow: string;
@@ -26,7 +28,11 @@ const BLOCKS: Block[] = [
       'Embed on any site or share a short link',
     ],
     icon: CalendarRange,
-    demo: <FeatureBookingDemo />,
+    demo: (
+      <DemoFrame>
+        <FeatureBookingDemo />
+      </DemoFrame>
+    ),
   },
   {
     eyebrow: 'AI session memory',
@@ -38,7 +44,11 @@ const BLOCKS: Block[] = [
       'Type your own notes for in-person calls',
     ],
     icon: MessagesSquare,
-    demo: <FeatureAiNotesDemo />,
+    demo: (
+      <DemoFrame>
+        <FeatureAiNotesDemo />
+      </DemoFrame>
+    ),
     reverse: true,
   },
   {
@@ -51,7 +61,11 @@ const BLOCKS: Block[] = [
       'Optional client-side view ("Your journey")',
     ],
     icon: Layers,
-    demo: <FeatureTimelineDemo />,
+    demo: (
+      <DemoFrame>
+        <FeatureTimelineDemo />
+      </DemoFrame>
+    ),
   },
   {
     eyebrow: 'Reminders & workflow',
@@ -63,7 +77,11 @@ const BLOCKS: Block[] = [
       'Webhooks to plug into your other tools',
     ],
     icon: Bell,
-    demo: <FeatureReminderDemo />,
+    demo: (
+      <DemoFrame>
+        <FeatureReminderDemo />
+      </DemoFrame>
+    ),
     reverse: true,
   },
 ];
@@ -85,11 +103,7 @@ export function FeatureSections() {
 
         <div className="mt-20 space-y-28">
           {BLOCKS.map((b) => (
-            <article
-              key={b.title}
-              className="grid items-center gap-10 md:grid-cols-2"
-              data-reverse={b.reverse ? 'true' : undefined}
-            >
+            <Reveal as="article" key={b.title} className="grid items-center gap-10 md:grid-cols-2">
               <div className={b.reverse ? 'md:order-2' : ''}>
                 <div className="inline-flex items-center gap-2 rounded-full border border-[color:var(--color-mist)] bg-[color:var(--color-paper)] px-3 py-1">
                   <b.icon size={12} className="text-[color:var(--color-thread)]" />
@@ -113,7 +127,7 @@ export function FeatureSections() {
                 ) : null}
               </div>
               <div className={b.reverse ? 'md:order-1' : ''}>{b.demo}</div>
-            </article>
+            </Reveal>
           ))}
         </div>
       </div>
