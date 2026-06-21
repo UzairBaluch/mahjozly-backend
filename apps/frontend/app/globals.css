@@ -54,6 +54,8 @@
 
   html {
     scroll-behavior: smooth;
+    overflow-x: clip;
+    scrollbar-gutter: stable;
   }
 
   html,
@@ -64,6 +66,7 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    overflow-x: clip;
   }
 
   /* AI-generated content — distinct visual identity from human-entered data. */
@@ -132,12 +135,10 @@
   /* Card lift on hover. */
   .card-lift {
     transition:
-      transform 200ms var(--ease-out-soft),
       box-shadow 200ms var(--ease-out-soft),
       border-color 200ms var(--ease-out-soft);
   }
   .card-lift:hover {
-    transform: translateY(-1px);
     box-shadow: var(--shadow-md);
     border-color: rgb(10 10 10 / 0.12);
   }

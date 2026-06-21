@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { Sparkles } from 'lucide-react';
 
 const SUMMARY = [
@@ -15,49 +14,10 @@ const ACTION_ITEMS = [
   'Schedule mock exam for next Thursday',
 ];
 
-// Auto-typing AI summary effect that mimics LLM streaming, on a loop.
+// Static snapshot — no typing loop (avoided layout shift).
 export function FeatureAiNotesDemo() {
-  const [phase, setPhase] = useState<'transcribing' | 'writing' | 'done'>('transcribing');
-  const [writtenLines, setWrittenLines] = useState<string[]>([]);
-  const [partial, setPartial] = useState('');
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const run = async () => {
-      while (!cancelled) {
-        setPhase('transcribing');
-        setWrittenLines([]);
-        setPartial('');
-        await wait(1400);
-        if (cancelled) return;
-        setPhase('writing');
-
-        for (const line of SUMMARY) {
-          if (cancelled) return;
-          for (let i = 1; i <= line.length; i++) {
-            if (cancelled) return;
-            setPartial(line.slice(0, i));
-            await wait(18);
-          }
-          setWrittenLines((prev) => [...prev, line]);
-          setPartial('');
-          await wait(280);
-        }
-        if (cancelled) return;
-        setPhase('done');
-        await wait(2600);
-      }
-    };
-
-    run();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   return (
-    <div className="rounded-xl border border-[color:var(--color-mist)] bg-[color:var(--color-paper)] p-5 shadow-sm">
+    <div className="min-h-[280px] rounded-xl border border-[color:var(--color-mist)] bg-[color:var(--color-paper)] p-5 shadow-sm">
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Sparkles size={14} className="text-[color:var(--color-dusk)]" />
@@ -66,53 +26,28 @@ export function FeatureAiNotesDemo() {
           </span>
         </div>
         <span className="mono text-[0.65rem] uppercase tracking-wider text-[color:var(--color-dusk)]">
-          {phase === 'transcribing' && (
-            <>
-              <span className="anim-pulse-soft">●</span> Transcribing 47:12 of audio
-            </>
-          )}
-          {phase === 'writing' && (
-            <>
-              <span className="anim-pulse-soft">●</span> Writing brief
-            </>
-          )}
-          {phase === 'done' && 'Saved to client thread'}
+          Saved to client thread
         </span>
       </div>
 
       <div className="min-h-[8.5rem] space-y-2">
-        {writtenLines.map((line, i) => (
+        {SUMMARY.map((line, i) => (
           <p key={i} className="ai text-sm leading-relaxed italic">
             {line}
           </p>
         ))}
-        {partial ? (
-          <p className="ai text-sm leading-relaxed italic">
-            {partial}
-            <span className="anim-blink ml-0.5 inline-block h-3 w-[2px] translate-y-[1px] bg-[color:var(--color-dusk)] align-middle" />
-          </p>
-        ) : null}
-        {phase === 'transcribing' ? (
-          <p className="ai text-sm italic opacity-50">Listening…</p>
-        ) : null}
       </div>
 
-      {phase === 'done' ? (
-        <div className="anim-fade-up mt-4 border-t border-[color:var(--color-mist)] pt-4">
-          <p className="mono text-[0.65rem] uppercase tracking-wider text-[color:var(--color-ink-soft)]">
-            Action items
-          </p>
-          <ul className="ai mt-2 space-y-1 text-xs">
-            {ACTION_ITEMS.map((a) => (
-              <li key={a}>· {a}</li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
+      <div className="mt-4 border-t border-[color:var(--color-mist)] pt-4">
+        <p className="mono text-[0.65rem] uppercase tracking-wider text-[color:var(--color-ink-soft)]">
+          Action items
+        </p>
+        <ul className="ai mt-2 space-y-1 text-xs">
+          {ACTION_ITEMS.map((a) => (
+            <li key={a}>· {a}</li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
-}
-
-function wait(ms: number) {
-  return new Promise<void>((r) => setTimeout(r, ms));
 }

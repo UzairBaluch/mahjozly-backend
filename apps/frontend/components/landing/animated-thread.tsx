@@ -11,13 +11,12 @@ type Props = {
   nodes: ThreadNode[];
   /** ms between each node revealing (default 600). */
   stagger?: number;
-  /** Auto-replay loop interval in ms. 0 = no replay. */
+  /** @deprecated Replay disabled — caused layout shift. Kept for API compat. */
   replayMs?: number;
 };
 
-// Hero/feature thread that builds itself in: the stitched line draws, then each session dot
-// pops in with its annotation, like a recording playing back the client's relationship.
-export function AnimatedThread({ nodes, stagger = 600, replayMs = 0 }: Props) {
+// Hero/feature thread — builds once on load, then stays put (no replay loop).
+export function AnimatedThread({ nodes, stagger = 600 }: Props) {
   const [active, setActive] = useState(0);
 
   useEffect(() => {
@@ -34,8 +33,6 @@ export function AnimatedThread({ nodes, stagger = 600, replayMs = 0 }: Props) {
         setActive(i);
         if (i < nodes.length) {
           timeoutId = setTimeout(tick, stagger);
-        } else if (replayMs > 0) {
-          timeoutId = setTimeout(run, replayMs);
         }
       };
       timeoutId = setTimeout(tick, stagger);
@@ -46,7 +43,7 @@ export function AnimatedThread({ nodes, stagger = 600, replayMs = 0 }: Props) {
       cancelled = true;
       clearTimeout(timeoutId);
     };
-  }, [nodes, stagger, replayMs]);
+  }, [nodes, stagger]);
 
   const stepX = nodes.length === 1 ? 50 : 100 / (nodes.length - 1);
 
