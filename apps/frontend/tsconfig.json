@@ -15,6 +15,7 @@
     "skipLibCheck": true,
     "allowJs": true,
     "verbatimModuleSyntax": false,
+    "types": ["node"],
     "plugins": [{ "name": "next" }],
     "paths": {
       "@/*": ["./*"]
