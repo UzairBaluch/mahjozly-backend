@@ -1,6 +1,10 @@
 // BullMQ + Redis client wrapper — single connection reused across queues and workers.
 // Backend enqueues jobs via getQueue(); worker app imports getQueue() + makes Workers.
-import { Queue, type QueueOptions } from 'bullmq';
+//
+// We pass a `connection` config object to BullMQ (not a pre-built ioredis instance) so the
+// types stay aligned with BullMQ's nested ioredis copy. For non-queue Redis usage, getRedis()
+// still returns an instance from our own ioredis dep.
+import { Queue, type QueueOptions, type ConnectionOptions } from 'bullmq';
 import IORedis, { type Redis } from 'ioredis';
 import { QUEUE_NAMES, type QueueName } from '@mahjozly/shared';
 
@@ -9,13 +13,26 @@ const globalForQueue = globalThis as unknown as {
   queues: Map<QueueName, Queue> | undefined;
 };
 
+function redisUrl(): string {
+  return process.env.REDIS_URL ?? 'redis://localhost:6379';
+}
+
 export function getRedis(): Redis {
   if (!globalForQueue.redis) {
-    globalForQueue.redis = new IORedis(process.env.REDIS_URL ?? 'redis://localhost:6379', {
-      maxRetriesPerRequest: null,
-    });
+    globalForQueue.redis = new IORedis(redisUrl(), { maxRetriesPerRequest: null });
   }
   return globalForQueue.redis;
+}
+
+function bullConnection(): ConnectionOptions {
+  // BullMQ accepts a connection string-shaped object; it builds its own ioredis client internally.
+  const url = new URL(redisUrl());
+  return {
+    host: url.hostname,
+    port: Number(url.port || 6379),
+    password: url.password || undefined,
+    username: url.username || undefined,
+  };
 }
 
 const defaultQueueOptions: Omit<QueueOptions, 'connection'> = {
@@ -35,12 +52,12 @@ export function getQueue(name: QueueName): Queue {
   if (existing) return existing;
 
   const queue = new Queue(name, {
-    connection: getRedis(),
+    connection: bullConnection(),
     ...defaultQueueOptions,
   });
   globalForQueue.queues.set(name, queue);
   return queue;
 }
 
-export { QUEUE_NAMES };
+export { QUEUE_NAMES, bullConnection };
 export type { QueueName };
