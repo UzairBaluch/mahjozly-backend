@@ -30,31 +30,13 @@ const SLOTS = ['09:00', '10:30', '14:00', '15:30'];
 
 export function HowItWorks() {
   const [activeStep, setActiveStep] = useState(0);
-  const [paused, setPaused] = useState(false);
-  const [demoKey, setDemoKey] = useState(0);
-
-  useEffect(() => {
-    if (paused) return;
-    const id = window.setInterval(() => {
-      setActiveStep((s) => (s + 1) % STEPS.length);
-      setDemoKey((k) => k + 1);
-    }, 6000);
-    return () => window.clearInterval(id);
-  }, [paused]);
 
   const selectStep = useCallback((index: number) => {
     setActiveStep(index);
-    setDemoKey((k) => k + 1);
-    setPaused(true);
   }, []);
 
   return (
-    <section
-      id="how"
-      className="relative py-24"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-    >
+    <section id="how" className="relative py-24">
       <div className="mx-auto max-w-6xl px-6">
         <header className="mx-auto max-w-2xl text-center">
           <p className="mono text-xs uppercase tracking-widest text-[color:var(--color-thread)]">
@@ -82,18 +64,18 @@ export function HowItWorks() {
                 onSelect={() => selectStep(i)}
               >
                 {i === 0 ? (
-                  <StepCalendarDemo key={demoKey} isActive={activeStep === 0} />
+                  <StepCalendarDemo isActive={activeStep === 0} />
                 ) : i === 1 ? (
-                  <StepVideoDemo key={demoKey} isActive={activeStep === 1} />
+                  <StepVideoDemo isActive={activeStep === 1} />
                 ) : (
-                  <StepBriefDemo key={demoKey} isActive={activeStep === 2} />
+                  <StepBriefDemo isActive={activeStep === 2} />
                 )}
               </StepCard>
             ))}
           </div>
 
           <p className="mono mt-8 text-center text-[0.65rem] uppercase tracking-wider text-[color:var(--color-ink-soft)]/70">
-            Click a step · demos auto-advance every 6s
+            Click a step to preview the demo
           </p>
         </div>
       </div>
@@ -176,7 +158,7 @@ function StepCard({
       className={cn(
         'card-lift relative cursor-pointer rounded-xl border bg-[color:var(--color-paper)] p-6 text-left transition-all duration-300',
         isActive
-          ? 'border-[color:var(--color-thread)] shadow-md ring-1 ring-[color:var(--color-thread)]/30 md:-translate-y-1'
+          ? 'border-[color:var(--color-thread)] shadow-md ring-1 ring-[color:var(--color-thread)]/30'
           : 'border-[color:var(--color-mist)] opacity-90 hover:opacity-100',
       )}
       aria-current={isActive ? 'step' : undefined}
@@ -202,7 +184,7 @@ function StepCard({
       <h3 className="display mt-5 text-2xl font-semibold">{step.title}</h3>
       <p className="mt-2 text-sm leading-relaxed text-[color:var(--color-ink-soft)]">{step.body}</p>
       <div
-        className="mt-6"
+        className="mt-6 min-h-[220px]"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => e.stopPropagation()}
       >

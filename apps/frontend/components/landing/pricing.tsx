@@ -125,7 +125,7 @@ function TierCard({ tier, billing }: { tier: Tier; billing: Billing }) {
       className={cn(
         'relative flex h-full flex-col rounded-2xl border bg-[color:var(--color-paper)] p-8 transition-shadow',
         isPro
-          ? 'border-[color:var(--color-thread)] shadow-lg ring-1 ring-[color:var(--color-thread)]/40 md:-translate-y-3 md:scale-[1.03] md:p-10'
+          ? 'border-[color:var(--color-thread)] shadow-lg ring-1 ring-[color:var(--color-thread)]/40'
           : 'border-[color:var(--color-mist)] shadow-xs',
       )}
     >
