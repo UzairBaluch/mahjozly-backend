@@ -1,0 +1,63 @@
+@import 'tailwindcss';
+
+@theme {
+  /* Design tokens (from the design spec). */
+  --color-paper: #eef0ec;
+  --color-ink: #1c2321;
+  --color-thread: #36675f;
+  --color-clay: #bd6b3e;
+  --color-dusk: #6c5e8a;
+  --color-mist: #c9cfc8;
+
+  /* Typography */
+  --font-display: 'Source Serif 4', ui-serif, Georgia, serif;
+  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html,
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* AI-generated content: every block tagged with .ai uses the Dusk Lavender tint
+     so machine-written text reads visually distinct from human-entered data. */
+  .ai {
+    color: var(--color-dusk);
+  }
+
+  /* Mono utility for IDs, timestamps, counters — the "ledger" feel. */
+  .mono {
+    font-family: var(--font-mono);
+    font-feature-settings: 'tnum';
+  }
+
+  /* Display headings use Source Serif 4. */
+  .display {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+
+  /* Focus ring — Thread Teal, visible across light backgrounds, accessibility floor. */
+  *:focus-visible {
+    outline: 2px solid var(--color-thread);
+    outline-offset: 2px;
+  }
+
+  /* Static fallback for the thread animation when the user prefers reduced motion. */
+  @media (prefers-reduced-motion: reduce) {
+    .thread-animated {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+}
